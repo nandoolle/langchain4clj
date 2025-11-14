@@ -5,9 +5,13 @@ All notable changes to this project will be documented in this file. This change
 ## [1.0.4] - 2025-11-14
 
 ### Fixed
-- Added `docs/cljdoc.edn` configuration to fix cljdoc documentation build
-- cljdoc now includes malli and schema dependencies during analysis
-- Documentation will be available at https://cljdoc.org/d/io.github.nandoolle/langchain4clj/
+- Added `docs/cljdoc.edn` configuration with documentation tree structure
+- Core API documentation will build successfully on cljdoc
+- Optional schema features (malli/schema) are documented in prose guides to avoid dependency conflicts
+
+### Note
+Optional namespaces (`tools.malli`, `tools.schema`) won't have API docs on cljdoc since their dependencies are optional.
+These features are fully documented in the TOOLS.md guide instead.
 
 ## [1.0.3] - 2025-11-14
 

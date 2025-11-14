@@ -1,12 +1,10 @@
-{;; Extra dependencies needed for documentation analysis
- ;; These are optional for users but required for cljdoc to analyze all namespaces
- :extra-deps {prismatic/schema {:mvn/version "1.4.1"}
-              metosin/malli {:mvn/version "0.16.4"}}
-
- ;; Specify that this is a Clojure-only library
+{;; Specify that this is a Clojure-only library
  :cljdoc/languages [:clj]
 
  ;; Documentation tree structure
+ ;; Note: Optional namespaces (tools.malli, tools.schema) won't have API docs
+ ;; on cljdoc since malli/schema are optional dependencies.
+ ;; These features are documented in TOOLS.md instead.
  :cljdoc.doc/tree [["Readme" {:file "README.md"}]
                    ["Getting Started"
                     ["Installation" {:file "README.md"}]
