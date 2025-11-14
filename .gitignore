@@ -74,9 +74,12 @@ test-summary-*.txt
 /temp/
 *.tmp
 *.temp
+
+# Documentation - ignore everything except images
 /doc
-/docs/archive
-/docs/development
+/docs/*
+!/docs/images
+!/docs/images/**
 ROADMAP.md
 
 # Coverage reports
