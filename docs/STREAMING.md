@@ -1,3 +1,8 @@
+---
+layout: default
+title: Streaming Responses
+---
+
 # Streaming Responses
 
 Receive tokens in real-time as they're generated for better UX and interactive applications.

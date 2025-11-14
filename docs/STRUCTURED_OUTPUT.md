@@ -1,3 +1,8 @@
+---
+layout: default
+title: Structured Output
+---
+
 # Structured Output
 
 Get guaranteed structured responses in JSON or EDN format with schema validation and automatic retry logic.

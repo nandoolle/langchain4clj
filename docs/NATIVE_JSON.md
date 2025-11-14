@@ -1,3 +1,8 @@
+---
+layout: default
+title: Native JSON Mode
+---
+
 # Native JSON Mode
 
 Force LLMs to return guaranteed valid JSON output using native provider support.

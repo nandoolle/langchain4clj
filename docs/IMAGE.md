@@ -1,3 +1,8 @@
+---
+layout: default
+title: Image Generation
+---
+
 # Image Generation
 
 Generate images from text prompts using DALL-E 3 and DALL-E 2.

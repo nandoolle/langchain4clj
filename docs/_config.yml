@@ -1,0 +1,56 @@
+# Site settings
+title: LangChain4Clj
+description: A Clojure wrapper for LangChain4j - Build AI applications with ease
+baseurl: "/langchain4clj"
+url: "https://nandoolle.github.io"
+
+# Build settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: 'highlight'
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:path/
+
+# Exclude from processing
+exclude:
+  - README.md
+  - cljdoc.edn
+  - _site/
+  - .sass-cache/
+  - .jekyll-cache/
+  - Gemfile
+  - Gemfile.lock
+
+# Navigation
+nav:
+  - title: "Home"
+    url: "/"
+  - title: "Core Features"
+    children:
+      - title: "Streaming Responses"
+        url: "/STREAMING"
+      - title: "Image Generation"
+        url: "/IMAGE"
+      - title: "Native JSON Mode"
+        url: "/NATIVE_JSON"
+      - title: "Structured Output"
+        url: "/STRUCTURED_OUTPUT"
+  - title: "Advanced Features"
+    children:
+      - title: "Tools & Function Calling"
+        url: "/TOOLS"
+      - title: "Assistant System"
+        url: "/ASSISTANT"
+      - title: "Multi-Agent Systems"
+        url: "/AGENTS"
+      - title: "RAG (Document Processing)"
+        url: "/RAG"
+      - title: "Resilience & Failover"
+        url: "/RESILIENCE"

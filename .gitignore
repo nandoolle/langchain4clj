@@ -75,12 +75,28 @@ test-summary-*.txt
 *.tmp
 *.temp
 
-# Documentation - ignore everything except images and cljdoc config
+# Documentation - ignore everything except Jekyll site and markdown files
 /doc
 /docs/*
+# Allow Jekyll configuration and structure
+!/docs/_config.yml
+!/docs/Gemfile
+!/docs/Gemfile.lock
+!/docs/_layouts
+!/docs/_layouts/**
+!/docs/_includes
+!/docs/_includes/**
+!/docs/assets
+!/docs/assets/**
 !/docs/images
 !/docs/images/**
+# Allow markdown documentation files
+!/docs/*.md
 !/docs/cljdoc.edn
+# Ignore Jekyll build output
+/docs/_site/
+/docs/.jekyll-cache/
+/docs/.sass-cache/
 ROADMAP.md
 
 # Coverage reports

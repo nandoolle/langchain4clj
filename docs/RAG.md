@@ -1,3 +1,8 @@
+---
+layout: default
+title: RAG (Document Processing)
+---
+
 # RAG - Document Processing
 
 Load and process documents for Retrieval-Augmented Generation (RAG) with flexible parsing and splitting strategies.

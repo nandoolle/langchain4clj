@@ -1,3 +1,8 @@
+---
+layout: default
+title: Assistant System
+---
+
 # Assistant System
 
 High-level API for creating assistants with automatic memory management, tool execution loops, and template support.

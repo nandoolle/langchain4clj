@@ -1,3 +1,8 @@
+---
+layout: default
+title: Multi-Agent Systems
+---
+
 # Multi-Agent Systems
 
 Create sophisticated multi-agent systems with sequential, parallel, and collaborative execution patterns.

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if page.title %}{{ page.title }} - {% endif %}{{ site.title }}</title>
+    <meta name="description" content="{{ site.description }}">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1><a href="{{ '/' | relative_url }}">{{ site.title }}</a></h1>
+                <p class="subtitle">{{ site.description }}</p>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="theme-toggle-icon">🌙</span>
+                </button>
+            </div>
+            
+            <nav class="nav">
+                {% for item in site.nav %}
+                <div class="nav-section">
+                    {% if item.url %}
+                    <a href="{{ item.url | relative_url }}" class="nav-link{% if page.url == item.url %} active{% endif %}">
+                        {{ item.title }}
+                    </a>
+                    {% else %}
+                    <div class="nav-title">{{ item.title }}</div>
+                    {% endif %}
+                    
+                    {% if item.children %}
+                    <ul class="nav-list">
+                        {% for child in item.children %}
+                        <li>
+                            <a href="{{ child.url | relative_url }}" class="nav-link{% if page.url contains child.url %} active{% endif %}">
+                                {{ child.title }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <article>
+                {% if page.title %}
+                <header class="page-header">
+                    <h1>{{ page.title }}</h1>
+                </header>
+                {% endif %}
+                
+                {{ content }}
+            </article>
+            
+            <footer class="page-footer">
+                <p>Generated with Jekyll • <a href="https://github.com/nandoolle/langchain4clj" target="_blank">View on GitHub</a></p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="{{ '/assets/js/theme.js' | relative_url }}"></script>
+</body>
+</html>
