@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [1.0.4] - 2025-11-14
+
+### Fixed
+- Added `docs/cljdoc.edn` configuration to fix cljdoc documentation build
+- cljdoc now includes malli and schema dependencies during analysis
+- Documentation will be available at https://cljdoc.org/d/io.github.nandoolle/langchain4clj/
+
 ## [1.0.3] - 2025-11-14
 
 ### Initial Release
@@ -122,4 +129,5 @@ LangChain4Clj - A pure Clojure wrapper for LangChain4j that provides idiomatic, 
 - 0 failures, 0 errors
 - Integration tests for real API calls
 
+[1.0.4]: https://github.com/nandoolle/langchain4clj/releases/tag/v1.0.4
 [1.0.3]: https://github.com/nandoolle/langchain4clj/releases/tag/v1.0.3

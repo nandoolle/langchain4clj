@@ -31,7 +31,7 @@ The easiest way to release is using GitHub Actions:
 
 1. **Update version in `build.clj`**
    ```clojure
-   (def version "1.0.3") ; Update to new version
+   (def version "1.0.4") ; Update to new version
    ```
 
 2. **Update CHANGELOG.md**
@@ -41,14 +41,14 @@ The easiest way to release is using GitHub Actions:
 3. **Commit and push changes**
    ```bash
    git add build.clj CHANGELOG.md
-   git commit -m "Release version 1.0.3"
+   git commit -m "Release version 1.0.4"
    git push origin main
    ```
 
 4. **Create and push a tag**
    ```bash
-   git tag v1.0.3
-   git push origin v1.0.3
+   git tag v1.0.4
+   git push origin v1.0.4
    ```
 
 5. **Wait for GitHub Actions**
@@ -64,7 +64,7 @@ If you prefer to release manually:
 
 1. **Update version in `build.clj`**
    ```clojure
-   (def version "1.0.3")
+   (def version "1.0.4")
    ```
 
 2. **Update CHANGELOG.md**
@@ -85,8 +85,8 @@ If you prefer to release manually:
 
 5. **Create Git tag**
    ```bash
-   git tag v1.0.3
-   git push origin v1.0.3
+   git tag v1.0.4
+   git push origin v1.0.4
    ```
 
 6. **Create GitHub Release**
@@ -139,7 +139,7 @@ After releasing to Clojars:
 2. **Test Installation**
    ```clojure
    ;; In a test project's deps.edn
-   {:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.0.3"}}}
+   {:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.0.4"}}}
    ```
 
 3. **Check GitHub Release**
