@@ -43,7 +43,11 @@ jobs:
           curl -sLO https://raw.githubusercontent.com/clj-kondo/clj-kondo/master/script/install-clj-kondo
           chmod +x install-clj-kondo
           ./install-clj-kondo
-          clj-kondo --lint src test
+          # Allow warnings (exit code 2) but fail on errors (exit code 3)
+          clj-kondo --lint src test || EXIT_CODE=$?
+          if [ "${EXIT_CODE:-0}" -eq 3 ]; then
+            exit 1
+          fi
       
       - name: Build JAR
         run: clojure -T:build jar

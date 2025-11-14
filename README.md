@@ -28,7 +28,7 @@ LangChain4Clj is a **pure translation layer** - we wrap LangChain4j's functional
 Add to your `deps.edn`:
 
 ```clojure
-{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.0.0"}}}
+{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.0.3"}}}
 ```
 
 With schema libraries (optional):

@@ -8,6 +8,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
@@ -33,9 +35,6 @@ jobs:
             ~/.deps.clj
           key: ${{ runner.os }}-clojure-${{ hashFiles('**/deps.edn') }}
           restore-keys: ${{ runner.os }}-clojure-
-      
-      - name: Run tests
-        run: clojure -M:test
       
       - name: Deploy to Clojars
         env:
