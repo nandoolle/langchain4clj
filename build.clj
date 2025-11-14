@@ -51,12 +51,7 @@
                              [:url "https://www.eclipse.org/legal/epl-2.0/"]]]
                            [:developers
                             [:developer
-                             [:name "Fernando Olle"]]]
-                           [:scm
-                            [:url "https://github.com/nandoolle/langchain4clj"]
-                            [:connection "scm:git:git://github.com/nandoolle/langchain4clj.git"]
-                            [:developerConnection "scm:git:ssh://git@github.com/nandoolle/langchain4clj.git"]
-                            [:tag (str "v" version)]]]})
+                             [:name "Fernando Olle"]]]]})
   (b/copy-dir {:src-dirs ["src" "resources"]
                :target-dir class-dir})
   (b/jar {:class-dir class-dir
