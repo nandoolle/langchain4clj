@@ -1,0 +1,27 @@
+# Code Owners for langchain4clj
+# 
+# These owners will be automatically requested for review when someone 
+# opens a pull request that modifies files they own.
+#
+# Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+# This ensures all PRs require approval from a core contributor
+* @nandoolle
+
+# Core source code - require review from core contributors
+/src/ @nandoolle
+/test/ @nandoolle
+
+# Build and release configuration - require review
+/build.clj @nandoolle
+/deps.edn @nandoolle
+/.github/workflows/ @nandoolle
+
+# Documentation - require review
+/README.md @nandoolle
+/CHANGELOG.md @nandoolle
+/CONTRIBUTING.md @nandoolle
+
+# When you add more core contributors, add them like this:
+# * @nandoolle @contributor2 @contributor3
