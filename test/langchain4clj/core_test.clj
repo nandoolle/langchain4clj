@@ -1,7 +1,7 @@
 (ns langchain4clj.core-test
   (:require [clojure.test :refer [deftest is testing]]
             [langchain4clj.core :as core]
-            [langchain4clj.test-utils :as test-utils])
+            )
   (:import [dev.langchain4j.model.chat ChatModel]
            [dev.langchain4j.data.message AiMessage]
            [dev.langchain4j.model.chat.response ChatResponse]
@@ -571,6 +571,97 @@
         (is (instance? ChatModel model))
         (is (= "Ollama helper: test" (core/chat model "test")))))))
 
+;; ============================================================================
+;; Mistral Tests
+;; ============================================================================
+
+(deftest test-mistral-model-creation
+  (testing "Mistral model creation via create-model"
+    (with-redefs [core/build-model (fn [config]
+                                     (when (= :mistral (:provider config))
+                                       (reify ChatModel
+                                         (^String chat [_ ^String message]
+                                           (str "Mistral: " message)))))]
+
+      (let [model (core/create-model {:provider :mistral :api-key "test-key"})]
+        (is (instance? ChatModel model))
+        (is (= "Mistral: Hello" (core/chat model "Hello")))))))
+
+(deftest test-mistral-defaults
+  (testing "Mistral applies correct defaults via build-model"
+    (let [config-received (atom nil)]
+      (with-redefs [core/build-mistral-model
+                    (fn [config]
+                      (reset! config-received config)
+                      (reify ChatModel
+                        (^String chat [_ ^String message] "test")))]
+
+        ;; Test with minimal config
+        (core/create-model {:provider :mistral :api-key "test-key"})
+
+        (is (= "test-key" (:api-key @config-received)))
+        (is (= "mistral-medium-2508" (:model @config-received)))))))
+
+(deftest test-mistral-custom-config
+  (testing "Mistral accepts custom configuration"
+    (let [config-received (atom nil)]
+      (with-redefs [core/build-model
+                    (fn [config]
+                      (when (= :mistral (:provider config))
+                        (reset! config-received config)
+                        (reify ChatModel
+                          (^String chat [_ ^String message] "test"))))]
+
+        (core/create-model
+         {:provider :mistral
+          :api-key "test-key"
+          :model "mistral-large-latest"
+          :temperature 0.9
+          :timeout 120000
+          :max-tokens 2000
+          :max-retries 5
+          :log-requests? true
+          :log-responses? true})
+
+        (is (= :mistral (:provider @config-received)))
+        (is (= "test-key" (:api-key @config-received)))
+        (is (= "mistral-large-latest" (:model @config-received)))
+        (is (= 0.9 (:temperature @config-received)))
+        (is (= 120000 (:timeout @config-received)))
+        (is (= 2000 (:max-tokens @config-received)))
+        (is (= 5 (:max-retries @config-received)))
+        (is (= true (:log-requests? @config-received)))
+        (is (= true (:log-responses? @config-received)))))))
+
+(deftest test-mistral-threading
+  (testing "Mistral configuration with threading patterns"
+    (with-redefs [core/build-model
+                  (fn [config]
+                    (when (= :mistral (:provider config))
+                      (reify ChatModel
+                        (^String chat [_ ^String message]
+                          (str "Model: " (:model config))))))]
+
+      (let [model (core/create-model
+                   (-> {:provider :mistral
+                        :api-key "test-key"}
+                       (assoc :model "mistral-small-latest")
+                       (assoc :temperature 0.8)))]
+        (is (instance? ChatModel model))))))
+
+(deftest test-mistral-via-create-model
+  (testing "Mistral multimethod dispatch works correctly"
+    (with-redefs [core/build-model
+                  (fn [config]
+                    (when (= :mistral (:provider config))
+                      (reify ChatModel
+                        (^String chat [_ ^String message]
+                          (str "Mistral via create-model: " message)))))]
+
+      (let [model (core/create-model {:provider :mistral :api-key "test-key"})]
+        (is (instance? ChatModel model))
+        (is (= "Mistral via create-model: test" (core/chat model "test")))))))
+
 (deftest test-all-providers-create-chatmodel
   (testing "All providers create ChatModel instances"
     (with-redefs [core/build-model (fn [config]
@@ -580,23 +671,27 @@
                                        :google-ai-gemini (reify ChatModel (^String chat [_ ^String m] "google-ai-gemini"))
                                        :vertex-ai-gemini (reify ChatModel (^String chat [_ ^String m] "vertex-ai-gemini"))
                                        :ollama (reify ChatModel (^String chat [_ ^String m] "ollama"))
+                                       :mistral (reify ChatModel (^String chat [_ ^String m] "mistral"))
                                        nil))]
 
       (let [openai (core/create-model {:provider :openai :api-key "test"})
             anthropic (core/create-model {:provider :anthropic :api-key "test"})
             google-ai (core/create-model {:provider :google-ai-gemini :api-key "test"})
             vertex-ai (core/create-model {:provider :vertex-ai-gemini :project "test"})
-            ollama (core/create-model {:provider :ollama})]
+            ollama (core/create-model {:provider :ollama})
+            mistral (core/create-model {:provider :mistral})]
 
         (is (instance? ChatModel openai))
         (is (instance? ChatModel anthropic))
         (is (instance? ChatModel google-ai))
         (is (instance? ChatModel vertex-ai))
         (is (instance? ChatModel ollama))
+        (is (instance? ChatModel mistral))
 
         (is (= "openai" (core/chat openai "test")))
         (is (= "anthropic" (core/chat anthropic "test")))
         (is (= "google-ai-gemini" (core/chat google-ai "test")))
         (is (= "vertex-ai-gemini" (core/chat vertex-ai "test")))
-        (is (= "ollama" (core/chat ollama "test")))))))
+        (is (= "ollama" (core/chat ollama "test")))
+        (is (= "mistral" (core/chat mistral "test")))))))
 
