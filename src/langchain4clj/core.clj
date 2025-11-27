@@ -9,6 +9,7 @@
            [dev.langchain4j.model.chat ChatModel]
            [dev.langchain4j.model.anthropic AnthropicChatModel]
            [dev.langchain4j.model.googleai GoogleAiGeminiChatModel]
+           [dev.langchain4j.model.mistralai MistralAiChatModel]
            [dev.langchain4j.model.vertexai VertexAiGeminiChatModel]
            [dev.langchain4j.model.ollama OllamaChatModel]
            [dev.langchain4j.model.chat.request ChatRequest ResponseFormat]
@@ -87,6 +88,17 @@
    :log-requests :logRequests
    :log-responses :logResponses
    :max-retries [:maxRetries int-from-long]})
+
+(macros/defbuilder build-mistral-model
+  (MistralAiChatModel/builder)
+  {:api-key :apiKey
+   :model :modelName
+   :temperature :temperature
+   :timeout [:timeout duration-from-millis]
+   :log-requests? :logRequests
+   :log-responses? :logResponses
+   :max-retries :maxRetries
+   :max-tokens :maxTokens})
 
 (macros/defbuilder build-chat-request-idiomatic
   (ChatRequest/builder)
@@ -182,9 +194,24 @@
                               :log-responses log-responses?}
                              (select-keys config [:top-k :top-p :seed :num-predict :stop :response-format :max-retries]))))
 
+(defmethod build-model :mistral
+  [{:keys [model temperature timeout log-requests? log-responses?]
+    :or {model "mistral-medium-2508"
+         temperature const/default-temperature
+         timeout const/default-timeout-ms
+         log-requests? false
+         log-responses? false}
+    :as config}]
+  (build-mistral-model (merge {:model model
+                               :temperature temperature
+                               :timeout timeout
+                               :log-requests? log-requests?
+                               :log-responses? log-responses?}
+                              (select-keys config [:api-key :max-retries :max-tokens]))))
+
 (defn create-model
   "Create a chat model from a configuration map.
-  
+
   Config map structure:
   {:provider :openai | :anthropic
    :api-key \"your-api-key\"
@@ -193,7 +220,7 @@
    :timeout 60000 (optional, in milliseconds, default 60000)
    :log-requests? false (optional)
    :log-responses? false (optional)}
-  
+
   Example:
   (create-model {:provider :openai
                  :api-key \"sk-...\"
@@ -208,7 +235,7 @@
 (defn openai-model
   "Creates an OpenAI chat model from a configuration map.
   Supports threading-first pattern.
-  
+
   Config keys:
   - :api-key (required) - Your OpenAI API key
   - :model (optional) - Model name, defaults to \"gpt-4o-mini\"
@@ -218,17 +245,17 @@
   - :log-responses? (optional) - Log responses, defaults to false
   - :max-retries (optional) - Maximum retry attempts
   - :max-tokens (optional) - Maximum tokens to generate
-  
+
   Examples:
-  
+
   ;; Simple usage
   (openai-model {:api-key \"sk-...\"})
-  
+
   ;; With configuration
   (openai-model {:api-key \"sk-...\"
                  :model \"gpt-4\"
                  :temperature 0.8})
-  
+
   ;; Threading-first pattern
   (-> {:api-key \"sk-...\"}
       (assoc :model \"gpt-4\")
@@ -246,7 +273,7 @@
 (defn anthropic-model
   "Creates an Anthropic chat model from a configuration map.
   Supports threading-first pattern.
-  
+
   Config keys:
   - :api-key (required) - Your Anthropic API key
   - :model (optional) - Model name, defaults to \"claude-3-5-sonnet-20241022\"
@@ -256,17 +283,17 @@
   - :log-responses? (optional) - Log responses, defaults to false
   - :max-retries (optional) - Maximum retry attempts
   - :max-tokens (optional) - Maximum tokens to generate
-  
+
   Examples:
-  
+
   ;; Simple usage
   (anthropic-model {:api-key \"sk-ant-...\"})
-  
+
   ;; With configuration
   (anthropic-model {:api-key \"sk-ant-...\"
                     :model \"claude-3-opus-20240229\"
                     :temperature 0.9})
-  
+
   ;; Threading-first pattern
   (-> {:api-key \"sk-ant-...\"}
       (assoc :model \"claude-3-opus-20240229\")
@@ -284,9 +311,9 @@
 (defn google-ai-gemini-model
   "Creates a Google AI Gemini chat model from a configuration map.
   Supports threading-first pattern.
-  
+
   This uses the direct Google AI API (not Vertex AI).
-  
+
   Config keys:
   - :api-key (required) - Your Google AI API key
   - :model (optional) - Model name, defaults to gemini-1.5-flash
@@ -296,22 +323,22 @@
   - :log-responses? (optional) - Log responses, defaults to false
   - :max-retries (optional) - Maximum retry attempts
   - :max-tokens (optional) - Maximum tokens to generate
-  
+
   Available models:
   - gemini-1.5-pro - Most capable model
   - gemini-1.5-flash - Fast and efficient (default)
   - gemini-1.0-pro - Legacy model
-  
+
   Examples:
-  
+
   ;; Simple usage
   (google-ai-gemini-model {:api-key \"AIza...\"})
-  
+
   ;; With configuration
   (google-ai-gemini-model {:api-key \"AIza...\"
                            :model \"gemini-1.5-pro\"
                            :temperature 0.8})
-  
+
   ;; Threading-first pattern
   (-> {:api-key \"AIza...\"}
       (with-model \"gemini-1.5-pro\")
@@ -329,9 +356,9 @@
 (defn vertex-ai-gemini-model
   "Creates a Vertex AI Gemini chat model from a configuration map.
   Supports threading-first pattern.
-  
+
   This uses Google Cloud's Vertex AI (requires GCP setup).
-  
+
   Config keys:
   - :project (required) - Your GCP project ID
   - :location (optional) - GCP region, defaults to us-central1
@@ -340,30 +367,30 @@
   - :timeout (optional) - Timeout in milliseconds, defaults to 60000
   - :max-retries (optional) - Maximum retry attempts
   - :max-tokens (optional) - Maximum tokens to generate
-  
+
   Available models:
   - gemini-1.5-pro - Most capable model
   - gemini-1.5-flash - Fast and efficient (default)
   - gemini-1.0-pro - Legacy model
-  
+
   Available locations:
   - us-central1 (default)
   - us-east1
   - us-west1
   - europe-west1
   - asia-southeast1
-  
+
   Examples:
-  
+
   ;; Simple usage
   (vertex-ai-gemini-model {:project \"my-gcp-project\"})
-  
+
   ;; With configuration
   (vertex-ai-gemini-model {:project \"my-gcp-project\"
                            :location \"us-east1\"
                            :model \"gemini-1.5-pro\"
                            :temperature 0.9})
-  
+
   ;; Threading-first pattern
   (-> {:project \"my-gcp-project\"}
       (assoc :location \"europe-west1\")
@@ -381,10 +408,10 @@
 (defn ollama-model
   "Creates an Ollama chat model from a configuration map.
   Supports threading-first pattern.
-  
+
   Ollama allows running LLMs locally without API keys or costs.
   Popular models: llama3.1, mistral, gemma, codellama, etc.
-  
+
   Config keys:
   - :base-url (optional) - Ollama server URL, defaults to http://localhost:11434
   - :model (optional) - Model name, defaults to llama3.1
@@ -398,7 +425,7 @@
   - :log-requests? (optional) - Log requests, defaults to false
   - :log-responses? (optional) - Log responses, defaults to false
   - :max-retries (optional) - Maximum retry attempts
-  
+
   Popular models available via Ollama:
   - llama3.1 - Meta's Llama 3.1 (default)
   - llama3.1:70b - Larger Llama 3.1 variant
@@ -406,29 +433,29 @@
   - gemma - Google's Gemma
   - codellama - Code-specialized Llama
   - phi - Microsoft's Phi models
-  
+
   Prerequisites:
   1. Install Ollama: https://ollama.ai
   2. Pull a model: `ollama pull llama3.1`
   3. Server runs on http://localhost:11434 by default
-  
+
   Examples:
-  
+
   ;; Simple usage (assumes Ollama running locally)
   (ollama-model {})
-  
+
   ;; With specific model
   (ollama-model {:model \"mistral\"})
-  
+
   ;; With custom configuration
   (ollama-model {:model \"llama3.1:70b\"
                  :temperature 0.9
                  :top-p 0.95})
-  
+
   ;; Remote Ollama server
   (ollama-model {:base-url \"http://192.168.1.100:11434\"
                  :model \"codellama\"})
-  
+
   ;; Threading-first pattern
   (-> {}
       (assoc :model \"gemma\")
@@ -446,7 +473,7 @@
 
 (defn with-model
   "Sets the model name. Use in threading.
-  
+
   Example:
   (-> {:api-key \"sk-...\"}
       (with-model \"gpt-4\")
@@ -456,7 +483,7 @@
 
 (defn with-temperature
   "Sets the temperature. Use in threading.
-  
+
   Example:
   (-> {:api-key \"sk-...\"}
       (with-temperature 0.9)
@@ -466,7 +493,7 @@
 
 (defn with-timeout
   "Sets the timeout in milliseconds. Use in threading.
-  
+
   Example:
   (-> {:api-key \"sk-...\"}
       (with-timeout 30000)
@@ -476,7 +503,7 @@
 
 (defn with-logging
   "Enables request and response logging. Use in threading.
-  
+
   Example:
   (-> {:api-key \"sk-...\"}
       (with-logging)
@@ -490,7 +517,7 @@
 
 (defn with-response-format
   "Sets the response format for the chat request.
-  
+
   ⚠️  PROVIDER SUPPORT:
   - ✅ OpenAI: Fully supported with guaranteed JSON output
   - ✅ Google AI Gemini: Supported
@@ -498,18 +525,18 @@
   - ✅ Ollama: Supported
   - ❌ Anthropic Claude: NOT supported (will be ignored)
   - ❌ Vertex AI: NOT supported (will be ignored)
-  
+
   For unsupported providers, use prompt engineering instead.
-  
+
   Use ResponseFormat/JSON to force JSON output (when supported).
-  
+
   Example:
   (-> {:prompt \"Return user data\"}
       (with-response-format ResponseFormat/JSON)
       (chat model))
-  
+
   Or in options map:
-  (chat model \"Hello\" 
+  (chat model \"Hello\"
     {:response-format ResponseFormat/JSON})"
   [config format]
   (assoc config :response-format format))
@@ -517,30 +544,30 @@
 (defn with-json-mode
   "Convenience helper that sets response format to JSON.
   Equivalent to (with-response-format config ResponseFormat/JSON)
-  
+
   ⚠️  NATIVE JSON MODE IS ONLY GUARANTEED WITH OPENAI!
-  
+
   Provider Support:
   - ✅ OpenAI: Native JSON mode - 100% guaranteed valid JSON
   - ✅ Google AI Gemini: Supported
-  - ✅ Mistral AI: Supported  
+  - ✅ Mistral AI: Supported
   - ✅ Ollama: Supported
   - ❌ Anthropic Claude: NOT supported - will have NO EFFECT
   - ❌ Vertex AI: NOT supported - will have NO EFFECT
-  
+
   For Anthropic and other unsupported providers, use prompt engineering:
   - Add explicit JSON instructions in system message
   - Use prefilling (start assistant response with '{')
   - Use tool calling for structured output
-  
+
   Example (works with OpenAI):
-  (chat openai-model \"Return user data\" 
+  (chat openai-model \"Return user data\"
     (with-json-mode {}))
-  
+
   Example (won't work with Anthropic):
-  (chat anthropic-model \"Return user data\" 
+  (chat anthropic-model \"Return user data\"
     (with-json-mode {}))  ;; ❌ No effect! Use prompts instead
-  
+
   Or with threading:
   (-> {:temperature 0.7}
       with-json-mode
@@ -550,12 +577,12 @@
 
 (defn- supports-json-mode?
   "Checks if a ChatModel instance supports native JSON mode.
-   
+
    Returns true for:
    - OpenAI models
    - Google AI Gemini models
    - Ollama models
-   
+
    Returns false for:
    - Anthropic Claude models
    - Vertex AI models"
@@ -566,16 +593,16 @@
 
 (defn- build-chat-request
   "Builds a ChatRequest from message(s) and options map.
-  
+
   Supports:
   - Single string message or list of ChatMessage objects
   - Tools via :tools key (list of ToolSpecification)
   - Response format via :response-format key (ResponseFormat/JSON)
   - System message via :system-message key
   - Temperature, max-tokens, etc.
-  
+
   Example:
-  (build-chat-request \"Hello\" 
+  (build-chat-request \"Hello\"
     {:tools [calculator-spec]
      :response-format ResponseFormat/JSON
      :temperature 0.8})"
@@ -630,22 +657,22 @@
 
 (defn chat
   "Send a message to the chat model and get a response.
-  
+
   Two arities:
-  
+
   1. Simple chat (convenience method):
      (chat model \"Hello\")
      Returns: String
-  
+
   2. Chat with options (full ChatRequest support):
      (chat model \"Hello\" {:tools [calculator]
                            :response-format ResponseFormat/JSON
                            :temperature 0.8})
      Returns: ChatResponse (with metadata)
-  
+
   Or with message history:
      (chat model [user-msg ai-msg user-msg] {:tools [...]})
-  
+
   Options map keys:
   - :tools - Vector of ToolSpecification objects
   - :response-format - ResponseFormat (e.g. ResponseFormat/JSON)
@@ -658,27 +685,27 @@
   - :presence-penalty - Presence penalty
   - :stop-sequences - Vector of stop sequences
   - :model-name - Override model name
-  
+
   Examples:
-  
+
   ;; Simple usage
   (chat model \"What is 2+2?\")
   ;; => \"2 + 2 equals 4\"
-  
+
   ;; With tools
   (chat model \"Calculate 2+2\" {:tools [calculator-spec]})
   ;; => ChatResponse with tool execution requests
-  
+
   ;; With JSON mode
-  (chat model \"Return user data as JSON\" 
+  (chat model \"Return user data as JSON\"
     {:response-format ResponseFormat/JSON})
   ;; => ChatResponse with JSON string
-  
+
   ;; With conversation history
   (chat model [user-msg-1 ai-msg-1 user-msg-2]
     {:temperature 0.9})
   ;; => ChatResponse
-  
+
   ;; Everything together
   (chat model \"Hello\"
     {:tools [tool1 tool2]

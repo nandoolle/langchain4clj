@@ -6,6 +6,7 @@
         dev.langchain4j/langchain4j {:mvn/version "1.8.0"}
         dev.langchain4j/langchain4j-open-ai {:mvn/version "1.8.0"}
         dev.langchain4j/langchain4j-anthropic {:mvn/version "1.8.0"}
+        dev.langchain4j/langchain4j-mistral-ai {:mvn/version "1.8.0"}
         ;; Keep Gemini at 1.0.0-beta5 (streaming not available until 1.9.0+)
         dev.langchain4j/langchain4j-google-ai-gemini {:mvn/version "1.0.0-beta5"}
         dev.langchain4j/langchain4j-vertex-ai-gemini {:mvn/version "1.0.0-beta5"}
