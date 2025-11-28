@@ -12,7 +12,7 @@ LangChain4Clj is a **pure translation layer** - we wrap LangChain4j's functional
 
 ## Features
 
-- **Multiple LLM Providers** - OpenAI, Anthropic, Google AI Gemini, Vertex AI Gemini, Ollama
+- **Multiple LLM Providers** - OpenAI, Anthropic, Google AI Gemini, Vertex AI Gemini, Mistral, Ollama
 - **Image Generation** - DALL-E 3 & DALL-E 2 support with HD quality and style control
 - **Provider Failover** - Automatic retry and fallback for high availability
 - **Streaming Responses** - Real-time token streaming for better UX
@@ -38,7 +38,7 @@ With schema libraries (optional):
 {:deps {...}
  :aliases {:with-schema {:extra-deps {prismatic/schema {:mvn/version "1.4.1"}}}}}
 
-;; For Malli support  
+;; For Malli support
 {:deps {...}
  :aliases {:with-malli {:extra-deps {metosin/malli {:mvn/version "0.16.4"}}}}}
 ```
@@ -95,6 +95,12 @@ With schema libraries (optional):
                      :location "us-central1"
                      :model "gemini-1.5-pro"}))
 
+;; Mistral AI
+(def mistral-model
+  (llm/create-model {:provider :mistral
+                     :api-key (System/getenv "MISTRAL_API_KEY")
+                     :model "mistral-medium-2508"}))
+
 ;; Ollama (Local models - no API key needed!)
 (def ollama-model
   (llm/create-model {:provider :ollama
@@ -103,6 +109,7 @@ With schema libraries (optional):
 ;; Helper functions (alternative API)
 (def gemini (llm/google-ai-gemini-model {:api-key "..."}))
 (def vertex (llm/vertex-ai-gemini-model {:project "..."}))
+(def mistral (llm/mistral-model {:api-key "..."}))
 (def ollama (llm/ollama-model {:model "mistral"}))
 
 ;; All models work the same way
@@ -110,6 +117,7 @@ With schema libraries (optional):
 (llm/chat claude-model "Hello!")
 (llm/chat gemini-model "Hello!")
 (llm/chat vertex-gemini-model "Hello!")
+(llm/chat mistral-model "Hello!")
 (llm/chat ollama-model "Hello!")
 ```
 
@@ -156,7 +164,7 @@ Force the LLM to return valid JSON (supported by OpenAI, Anthropic):
 
 ;; Parse the JSON response
 (require '[clojure.data.json :as json])
-(let [response (llm/chat model "Return user data" 
+(let [response (llm/chat model "Return user data"
                  {:response-format ResponseFormat/JSON})
       json-str (-> response .aiMessage .text)]
   (json/read-str json-str :key-fn keyword))
@@ -219,7 +227,7 @@ Receive tokens in real-time as they're generated for better UX:
 - Cancellable - Can stop mid-generation
 - Real-time feedback - Process tokens as they arrive
 
-**Works with all providers**: OpenAI, Anthropic, Google AI Gemini, Vertex AI Gemini, Ollama
+**Works with all providers**: OpenAI, Anthropic, Google AI Gemini, Vertex AI Gemini, Mistral, Ollama
 
 **Tip:** See `examples/streaming_demo.clj` for interactive CLI examples and user-side core.async integration patterns.
 
@@ -335,8 +343,8 @@ For dynamic tool creation or complex schemas:
 
 ```clojure
 ;; Using Clojure Spec (advanced schemas)
-(def calculator 
-  (tools/create-tool 
+(def calculator
+  (tools/create-tool
     {:name "calculator"
      :description "Performs calculations"
      :params-schema ::calc-params  ; Spec keyword
@@ -345,7 +353,7 @@ For dynamic tool creation or complex schemas:
 ;; Using Plumatic Schema
 (def weather-tool
   (tools/create-tool
-    {:name "weather" 
+    {:name "weather"
      :description "Gets weather"
      :params-schema {:location s/Str}  ; Schema map
      :fn get-weather}))
@@ -354,7 +362,7 @@ For dynamic tool creation or complex schemas:
 (def database-tool
   (tools/create-tool
     {:name "query"
-     :description "Query database"  
+     :description "Query database"
      :params-schema [:map [:query :string]]  ; Malli vector
      :fn query-db}))
 ```
@@ -546,7 +554,7 @@ Build production-ready systems with automatic failover between LLM providers:
 ;; For complex validation, use Spec with create-tool
 (s/def ::expression string?)
 (s/def ::precision (s/and int? #(>= % 0) #(<= % 10)))  ; 0-10 decimal places
-(s/def ::calc-params (s/keys :req-un [::expression] 
+(s/def ::calc-params (s/keys :req-un [::expression]
                              :opt-un [::precision]))
 
 (def advanced-calc
