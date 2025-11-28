@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
-## [Unreleased]
+## [1.1.0] - 2025-11-28
 
 ### Added
 - Mistral AI provider support - Added Mistral to the list of supported LLM providers
@@ -141,5 +141,6 @@ LangChain4Clj - A pure Clojure wrapper for LangChain4j that provides idiomatic, 
 - 0 failures, 0 errors
 - Integration tests for real API calls
 
+[1.1.0]: https://github.com/nandoolle/langchain4clj/releases/tag/v1.1.0
 [1.0.4]: https://github.com/nandoolle/langchain4clj/releases/tag/v1.0.4
 [1.0.3]: https://github.com/nandoolle/langchain4clj/releases/tag/v1.0.3
