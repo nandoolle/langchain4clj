@@ -325,7 +325,13 @@ git commit -m "WIP"
 git push origin feature/your-feature-name
 ```
 
-Then create a Pull Request on GitHub with:
+Then create a Pull Request on GitHub:
+
+> **Important:** All PRs should target the `preview` branch, not `main`.
+> The `preview` branch is used for integration and testing before releases.
+> Changes are merged to `main` only when preparing a new release.
+
+PR should include:
 - **Clear title** describing the change
 - **Description** explaining what and why
 - **Link to issue** if applicable
