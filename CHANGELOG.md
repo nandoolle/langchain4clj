@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- Mistral AI provider support - Added Mistral to the list of supported LLM providers
+- Mistral model creation via `create-model` with `:provider :mistral`
+- `mistral-model` helper function for convenient Mistral model creation
+- Mistral support for agent
+
 ## [1.0.4] - 2025-11-14
 
 ### Fixed
