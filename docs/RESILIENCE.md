@@ -28,12 +28,12 @@ The resilience system provides automatic failover between LLM providers with int
 
 ### Key Features
 
-- ✅ **Automatic Retry** - Retry transient errors (rate limits, timeouts)
-- ✅ **Provider Chain** - Fallback to backup providers on failure
-- ✅ **Circuit Breaker** - Prevent cascading failures in production
-- ✅ **Error Classification** - Smart handling of different error types
-- ✅ **Zero Breaking Changes** - Works with all existing features
-- ✅ **Production Ready** - Battle-tested patterns
+-  **Automatic Retry** - Retry transient errors (rate limits, timeouts)
+-  **Provider Chain** - Fallback to backup providers on failure
+-  **Circuit Breaker** - Prevent cascading failures in production
+-  **Error Classification** - Smart handling of different error types
+-  **Zero Breaking Changes** - Works with all existing features
+-  **Production Ready** - Battle-tested patterns
 
 ### When to Use
 
