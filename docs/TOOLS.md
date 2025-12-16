@@ -32,11 +32,11 @@ LangChain4Clj provides two APIs for creating tools that AI models can call:
 
 ### Key Features (v0.8.0)
 
-- ✅ **Schemas are mandatory** - Tools without schemas are never called by OpenAI
-- ✅ **Automatic normalization** - Write kebab-case, AI uses camelCase
-- ✅ **Multiple schema libraries** - Spec, Plumatic Schema, Malli all supported
-- ✅ **Clean destructuring** - No manual parameter extraction needed
-- ✅ **Compile-time validation** - Catch errors early
+- **Schemas are mandatory** - Tools without schemas are never called by OpenAI
+- **Automatic normalization** - Write kebab-case, AI uses camelCase
+- **Multiple schema libraries** - Spec, Plumatic Schema, Malli all supported
+- **Clean destructuring** - No manual parameter extraction needed
+- **Compile-time validation** - Catch errors early
 
 ---
 
@@ -168,13 +168,13 @@ Define your own validation predicates:
 
 ### When to Use deftool
 
-✅ **Use `deftool` when:**
+**Use `deftool` when:**
 - Creating most tools (90% of cases)
 - You want concise, readable code
 - Schema is known at compile time
 - You want defn-like syntax
 
-❌ **Don't use `deftool` when:**
+**Don't use `deftool` when:**
 - Generating tools dynamically at runtime
 - Need complex spec validations with custom error messages
 - Integrating with existing spec/schema/malli definitions
@@ -274,13 +274,13 @@ Create tools at runtime:
 
 ### When to Use create-tool
 
-✅ **Use `create-tool` when:**
+**Use `create-tool` when:**
 - Generating tools dynamically
 - Need complex spec/schema/malli validations
 - Building tool factories
 - Programmatic tool configuration
 
-❌ **Don't use `create-tool` when:**
+**Don't use `create-tool` when:**
 - Writing simple static tools (use `deftool` instead)
 
 ---
@@ -304,9 +304,9 @@ LangChain4Clj automatically normalizes parameters between Clojure's kebab-case a
 ;; LangChain4Clj normalizes to:
 ;; {:pokemon-name "pikachu", "pokemonName" "pikachu"}
 
-;; Your code sees kebab-case ✅
-;; Spec validation works ✅
-;; OpenAI gets what it expects ✅
+;; Your code sees kebab-case
+;; Spec validation works
+;; OpenAI gets what it expects
 ```
 
 ### Nested Parameters
@@ -335,11 +335,11 @@ Normalization works recursively:
 
 ### Benefits
 
-- ✅ Write idiomatic Clojure (kebab-case)
-- ✅ Full OpenAI compatibility (camelCase)
-- ✅ Zero configuration
-- ✅ Works with all schema libraries
-- ✅ Handles deep nesting
+- Write idiomatic Clojure (kebab-case)
+- Full OpenAI compatibility (camelCase)
+- Zero configuration
+- Works with all schema libraries
+- Handles deep nesting
 
 ---
 
@@ -552,14 +552,14 @@ These functions still work but are discouraged. Migrate to the new API for:
 ### 1. Always Provide Good Descriptions
 
 ```clojure
-;; ❌ Bad - vague description
+;; Bad - vague description
 (tools/deftool get-data
   "Gets data"
   {:id int?}
   [{:keys [id]}]
   (fetch-data id))
 
-;; ✅ Good - clear, specific description
+;; Good - clear, specific description
 (tools/deftool get-user-profile
   "Fetches complete user profile including name, email, and preferences by user ID"
   {:user-id int?}
@@ -572,14 +572,14 @@ The AI uses descriptions to decide when to call tools. Be specific!
 ### 2. Use Descriptive Parameter Names
 
 ```clojure
-;; ❌ Bad - ambiguous
+;; Bad - ambiguous
 (tools/deftool calculate
   "Calculates something"
   {:x number? :y number?}
   [{:keys [x y]}]
   (+ x y))
 
-;; ✅ Good - self-documenting
+;; Good - self-documenting
 (tools/deftool add-numbers
   "Adds two numbers together and returns the sum"
   {:first-number number?
@@ -608,7 +608,7 @@ Return descriptive strings, not exceptions. The AI needs text responses!
 ### 4. Keep Tools Focused
 
 ```clojure
-;; ❌ Bad - tool does too much
+;; Bad - tool does too much
 (tools/deftool manage-user
   "Creates, updates, or deletes users"
   {:action string? :user-id int? :data map?}
@@ -618,7 +618,7 @@ Return descriptive strings, not exceptions. The AI needs text responses!
     "update" (update-user user-id data)
     "delete" (delete-user user-id)))
 
-;; ✅ Good - separate tools with clear purposes
+;; Good - separate tools with clear purposes
 (tools/deftool create-user
   "Creates a new user with the provided data"
   {:name string? :email string?}
@@ -681,11 +681,11 @@ Return descriptive strings, not exceptions. The AI needs text responses!
 **Causes:**
 1. **Missing schema** (v0.7.x only - fixed in v0.8.0)
    ```clojure
-   ;; ❌ v0.7.x - tool without schema never called
+   ;;  v0.7.x - tool without schema never called
    (def broken-tool
      (tools/tool "calculate" "Math" calculate-fn))
    
-   ;; ✅ v0.8.0 - schema is mandatory
+   ;; v0.8.0 - schema is mandatory
    (tools/deftool calculate
      "Math"
      {:expression string?}
@@ -695,14 +695,14 @@ Return descriptive strings, not exceptions. The AI needs text responses!
 
 2. **Vague description**
    ```clojure
-   ;; ❌ Bad - AI doesn't know when to use it
+   ;; Bad - AI doesn't know when to use it
    (tools/deftool get-info
      "Gets information"
      {:id int?}
      [{:keys [id]}]
      (fetch-info id))
    
-   ;; ✅ Good - clear purpose
+   ;; Good - clear purpose
    (tools/deftool get-user-profile
      "Retrieves complete user profile information including name, email, and account settings by user ID. Use this when the user asks about a specific user's details."
      {:user-id int?}
@@ -760,13 +760,13 @@ Return descriptive strings, not exceptions. The AI needs text responses!
 **Solution:** Use `create-tool` for complex specs:
 
 ```clojure
-;; ❌ Won't work - deftool uses simple predicates
+;; Won't work - deftool uses simple predicates
 (tools/deftool my-tool
   "Description"
   {::complex-spec :spec}  ; Can't use spec keywords directly
   ...)
 
-;; ✅ Use create-tool for complex specs
+;; Use create-tool for complex specs
 (s/def ::email (s/and string? #(re-matches #".+@.+\..+" %)))
 (s/def ::age (s/and int? #(>= % 0) #(<= % 150)))
 (s/def ::user-params (s/keys :req-un [::email ::age]))
@@ -787,11 +787,11 @@ Return descriptive strings, not exceptions. The AI needs text responses!
 **Causes:**
 1. Tool name has invalid characters
    ```clojure
-   ;; ❌ Bad - special characters
+   ;; Bad - special characters
    (tools/deftool my-tool!
      ...)
    
-   ;; ✅ Good - alphanumeric + underscores
+   ;; Good - alphanumeric + underscores
    (tools/deftool my_tool
      ...)
    ```
@@ -835,17 +835,17 @@ Return descriptive strings, not exceptions. The AI needs text responses!
 
 ### Key Takeaways
 
-1. ✅ **Schemas are mandatory** - Prevents silent failures
-2. ✅ **Use `deftool` for most cases** - Simple, concise, idiomatic
-3. ✅ **Parameter normalization is automatic** - Write kebab-case naturally
-4. ✅ **Descriptions matter** - AI uses them to decide when to call tools
-5. ✅ **Return strings, not exceptions** - AI needs textual responses
+1.  **Schemas are mandatory** - Prevents silent failures
+2.  **Use `deftool` for most cases** - Simple, concise, idiomatic
+3.  **Parameter normalization is automatic** - Write kebab-case naturally
+4.  **Descriptions matter** - AI uses them to decide when to call tools
+5.  **Return strings, not exceptions** - AI needs textual responses
 
 ---
 
 **Next Steps:**
-- See [README.md](../README.md) for more examples
-- Check [examples/](../examples/) for complete demos
-- Read [ASSISTANT.md](ASSISTANT.md) for using tools with assistants
+- See [README.md](https://github.com/nandoolle/langchain4clj/blob/preview/README.md)) for more examples
+- Check [examples/](https://github.com/nandoolle/langchain4clj/tree/preview/examples) for complete demos
+- Read [ASSISTANT.md](https://github.com/nandoolle/langchain4clj/blob/preview/docs/ASSISTANT.md) for using tools with assistants
 
 **Having issues?** [Open an issue on GitHub](https://github.com/langchain4clj/issues)
