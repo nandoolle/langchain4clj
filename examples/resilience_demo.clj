@@ -246,7 +246,7 @@
     (catch Exception e
       (println "JSON mode example skipped (optional dependency)")))
 
-  (println "\n✅ Resilience is compatible with all features"))
+  (println "\nResilience is compatible with all features"))
 
 ;; =============================================================================
 ;; Main Demo Runner
@@ -283,8 +283,8 @@
       (println "Some examples may require API keys or Ollama")))
 
   (println "\n" (apply str (repeat 60 "=")))
-  (println "\n✅ Demo complete!")
-  (println "\n📖 For full documentation, see: docs/RESILIENCE.md"))
+  (println "\nDemo complete!")
+  (println "\nFor full documentation, see: docs/RESILIENCE.md"))
 
 (comment
   ;; Run the demo
@@ -299,3 +299,4 @@
   (example-6-monitoring)
   (example-7-recovery-testing)
   (example-8-integration))
+

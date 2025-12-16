@@ -569,7 +569,7 @@ Build production-ready systems with automatic failover between LLM providers:
 ## Documentation
 
 - [Provider Failover & Circuit Breaker Guide](docs/RESILIENCE.md)
-- [Full API Documentation](docs/API.md)
+- [Full API Documentation](https://nandoolle.github.io/langchain4clj/)
 - [Tool System Guide](docs/TOOLS.md)
 - [Assistant Tutorial](docs/ASSISTANT.md)
 - [Examples](examples/)
@@ -582,15 +582,12 @@ Build production-ready systems with automatic failover between LLM providers:
 - Token counting and cost estimation
 - PgVector integration for production RAG
 
-See [ROADMAP.md](ROADMAP.md) for full details.
-
 ## Contributing
 
 We welcome contributions! Check out:
 
-- [Open Issues](https://github.com/langchain4clj/issues)
+- [Open Issues](https://github.com/nandoolle/langchain4clj/issues)
 - [Contributing Guide](CONTRIBUTING.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## Acknowledgments
 
