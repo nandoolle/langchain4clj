@@ -98,12 +98,4 @@ clojure -Sforce -M:dev scripts/dev/inspect-toolspec.clj
 
 ---
 
-## 🔗 Related Documentation
-
-- [docs/development/START_HERE.md](../docs/development/START_HERE.md) - Development guide
-- [docs/development/TESTING_GUIDE.md](../docs/development/TESTING_GUIDE.md) - Testing guide
-- [docs/development/CLAUDE.md](../docs/development/CLAUDE.md) - Project context for AI assistants
-
----
-
-**Last Updated**: February 2025
+**Last Updated**: December 2025
