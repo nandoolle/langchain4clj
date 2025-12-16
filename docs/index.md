@@ -38,6 +38,8 @@ Or to your Leiningen `project.clj`:
 
 Explore the fundamental capabilities of LangChain4Clj:
 
+- **[Core Chat](CORE_CHAT.html)** - Model creation, chat function, and provider configuration
+- **[Memory Patterns](MEMORY.html)** - Conversation history and context management
 - **[Streaming Responses](STREAMING.html)** - Real-time streaming with callbacks and error handling
 - **[Image Generation](IMAGE.html)** - DALL-E 2/3 integration with quality and style controls
 - **[Native JSON Mode](NATIVE_JSON.html)** - Provider-guaranteed valid JSON output
