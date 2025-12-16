@@ -18,8 +18,6 @@
   (when n (int n)))
 
 (defn- create-handler
-  "Creates StreamingChatResponseHandler from callbacks map.
-   Required: :on-token. Optional: :on-complete, :on-error."
   [{:keys [on-token on-complete on-error]}]
   (reify StreamingChatResponseHandler
     (onPartialResponse [_ token]

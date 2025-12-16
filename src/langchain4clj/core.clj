@@ -310,7 +310,6 @@
       (instance? OllamaChatModel model)))
 
 (defn- build-chat-request
-  "Builds a ChatRequest from message(s) and options."
   [message {:keys [tools response-format system-message
                    temperature max-tokens top-p top-k
                    frequency-penalty presence-penalty
