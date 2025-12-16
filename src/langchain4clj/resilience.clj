@@ -1,28 +1,5 @@
 (ns langchain4clj.resilience
-  "Provider failover and circuit breaker for high availability.
-  
-  This namespace provides automatic failover between LLM providers when
-  the primary provider fails. It includes:
-  - Automatic retry with configurable delay
-  - Fallback to backup providers
-  - Circuit breaker to prevent cascading failures
-  - Error classification (recoverable vs non-recoverable)
-  
-  Example usage:
-  
-    (require '[langchain4clj.core :as core])
-    (require '[langchain4clj.resilience :as resilience])
-    
-    ;; Create models with circuit breakers
-    (def openai (resilience/create-resilient-model 
-                  (core/create-model {:provider :openai :api-key \"...\"})))
-    
-    (def anthropic (resilience/create-resilient-model
-                     (core/create-model {:provider :anthropic :api-key \"...\"})))
-    
-    ;; Use failover model
-    (def model (resilience/with-failover openai anthropic))
-    (core/chat model \"Hello\")  ; Falls back to anthropic if openai fails"
+  "Provider failover and circuit breaker for high availability."
   (:require [langchain4clj.core :as core]
             [langchain4clj.constants :as const]
             [clojure.string :as str]
@@ -31,14 +8,8 @@
            [dev.langchain4j.model.chat.request ChatRequest]
            [dev.langchain4j.model.chat.response ChatResponse]))
 
-;; ============================================================================
-;; Error Classification
-;; ============================================================================
-
 (defn- retryable-error?
-  "Returns true if the error justifies retrying on the SAME provider.
-  
-  Examples: rate limits, timeouts, temporary service unavailability."
+  "Rate limits, timeouts, temporary unavailability - retry on same provider."
   [^Exception exception]
   (let [msg (str (.getMessage exception) " " (.getClass exception))]
     (or
@@ -58,9 +29,7 @@
      (str/includes? msg "SocketTimeoutException"))))
 
 (defn- recoverable-error?
-  "Returns true if the error justifies trying the NEXT provider.
-  
-  Examples: authentication failures, model not found, persistent connection issues."
+  "Auth failures, not found, connection issues - try next provider."
   [^Exception exception]
   (let [msg (str (.getMessage exception) " " (.getClass exception))]
     (or
@@ -85,9 +54,7 @@
      (str/includes? msg "unreachable"))))
 
 (defn- non-recoverable-error?
-  "Returns true if the error should be immediately thrown to the user.
-  
-  Examples: invalid input, quota exceeded permanently."
+  "Invalid input, quota exceeded - throw immediately."
   [^Exception exception]
   (let [msg (str (.getMessage exception) " " (.getClass exception))]
     (or
@@ -101,17 +68,8 @@
      (str/includes? msg "billing")
      (str/includes? msg "payment"))))
 
-;; ============================================================================
-;; Retry Logic
-;; ============================================================================
-
 (defn- retry-provider
-  "Attempts to call a provider with retry logic.
-  
-  Returns:
-  - The response if successful
-  - nil if all retries exhausted or error is recoverable (try next provider)
-  - throws if error is non-recoverable"
+  "Calls provider with retries. Returns response, nil (try next), or throws."
   [provider message-or-request max-retries delay-ms chat-fn]
   (loop [attempt 0
          _last-error nil]
@@ -163,14 +121,8 @@
               (log/error "Unknown error from provider:" (.getMessage e))
               (throw e))))))))
 
-;; ============================================================================
-;; Provider Chain Logic
-;; ============================================================================
-
 (defn- try-providers-with-retry
-  "Tries each provider in sequence with retry logic.
-  
-  For simple String chat."
+  "Tries providers in sequence for String chat."
   [providers ^String message max-retries delay-ms]
   (loop [remaining-providers providers
          providers-tried []
@@ -194,9 +146,7 @@
                          :providers-tried (count providers-tried)}))))))
 
 (defn- try-providers-with-retry-request
-  "Tries each provider in sequence with retry logic.
-  
-  For ChatRequest (advanced features)."
+  "Tries providers in sequence for ChatRequest."
   [providers ^ChatRequest request max-retries delay-ms]
   (loop [remaining-providers providers
          providers-tried []
@@ -219,12 +169,8 @@
                         {:providers-count (count providers)
                          :providers-tried (count providers-tried)}))))))
 
-;; ============================================================================
-;; Circuit Breaker (Phase 2)
-;; ============================================================================
-
 (defn- create-circuit-breaker-state
-  "Creates initial circuit breaker state for a provider."
+  "Creates initial circuit breaker state."
   []
   (atom {:state :closed
          :failure-count 0
@@ -234,7 +180,6 @@
          :total-failures 0}))
 
 (defn- circuit-breaker-half-open?
-  "Returns true if circuit breaker should transition to half-open."
   [state-atom timeout-ms]
   (let [state @state-atom]
     (and (= :open (:state state))
@@ -243,7 +188,6 @@
              timeout-ms))))
 
 (defn- record-success!
-  "Records a successful call and updates circuit breaker state."
   [state-atom success-threshold]
   (let [old-state (:state @state-atom)
         new-state (swap! state-atom
@@ -277,7 +221,6 @@
     new-state))
 
 (defn- record-failure!
-  "Records a failed call and updates circuit breaker state."
   [state-atom failure-threshold]
   (let [old-state (:state @state-atom)
         new-state (swap! state-atom
@@ -320,7 +263,6 @@
     new-state))
 
 (defn- transition-to-half-open!
-  "Transitions circuit breaker from open to half-open."
   [state-atom]
   (let [old-state (:state @state-atom)
         new-state (swap! state-atom
@@ -336,7 +278,6 @@
     new-state))
 
 (defn- should-allow-request?
-  "Determines if a request should be allowed based on circuit breaker state."
   [state-atom timeout-ms]
   (let [state @state-atom]
     (case (:state state)
@@ -347,12 +288,6 @@
               true))))
 
 (defn- retry-provider-with-circuit-breaker
-  "Attempts to call a provider with retry logic and circuit breaker.
-  
-  Returns:
-  - The response if successful
-  - nil if circuit breaker is open or errors are recoverable
-  - throws if error is non-recoverable"
   [provider message-or-request max-retries delay-ms chat-fn
    circuit-breaker-state cb-config]
 
@@ -422,9 +357,6 @@
                   (throw e))))))))))
 
 (defn- try-providers-with-circuit-breaker
-  "Tries each provider with circuit breaker support.
-  
-  For simple String chat."
   [providers message max-retries delay-ms circuit-breakers cb-config]
   (loop [remaining-providers providers
          remaining-breakers circuit-breakers
@@ -452,9 +384,6 @@
                          :providers-tried (count providers-tried)}))))))
 
 (defn- try-providers-with-circuit-breaker-request
-  "Tries each provider with circuit breaker support.
-  
-  For ChatRequest (advanced features)."
   [providers request max-retries delay-ms circuit-breakers cb-config]
   (loop [remaining-providers providers
          remaining-breakers circuit-breakers
@@ -481,65 +410,9 @@
                         {:providers-count (count providers)
                          :providers-tried (count providers-tried)}))))))
 
-;; ============================================================================
-;; Public API
-;; ============================================================================
-
 (defn create-resilient-model
-  "Creates a resilient ChatModel wrapper with automatic failover.
-  
-  When the primary provider fails, automatically tries fallback providers in order.
-  Includes retry logic and optional circuit breaker for production resilience.
-  
-  Configuration:
-  - :primary - Primary ChatModel instance (required)
-  - :fallbacks - Vector of fallback ChatModel instances (optional, default [])
-  - :max-retries - Max retries per provider on retryable errors (optional, default 2)
-  - :retry-delay-ms - Delay between retries in milliseconds (optional, default 1000)
-  
-  Circuit Breaker (optional, Phase 2):
-  - :circuit-breaker? - Enable circuit breaker (optional, default false)
-  - :failure-threshold - Failures before opening circuit (optional, default 5)
-  - :success-threshold - Successes before closing from half-open (optional, default 2)
-  - :timeout-ms - Time in open before half-open (optional, default 60000)
-  
-  Error Handling:
-  - Retryable errors (429, 503, timeout) → retry on same provider
-  - Recoverable errors (401, 404, connection) → try next provider
-  - Non-recoverable errors (400, quota) → throw immediately
-  
-  Circuit Breaker States (when enabled):
-  - Closed: Normal operation, requests pass through
-  - Open: Too many failures, skip provider temporarily
-  - Half-Open: Testing recovery, limited requests allowed
-  
-  Example without circuit breaker (Phase 1):
-  
-    (def model
-      (create-resilient-model
-        {:primary openai-model
-         :fallbacks [anthropic-model ollama-model]
-         :max-retries 2
-         :retry-delay-ms 1000}))
-  
-  Example with circuit breaker (Phase 2):
-  
-    (def model
-      (create-resilient-model
-        {:primary openai-model
-         :fallbacks [anthropic-model ollama-model]
-         :max-retries 2
-         :retry-delay-ms 1000
-         :circuit-breaker? true
-         :failure-threshold 5
-         :success-threshold 2
-         :timeout-ms 60000}))
-    
-    ;; Use like normal model
-    (chat model \"Hello\")
-    ;; Tries: OpenAI (with retries + CB) → Anthropic (with retries + CB) → Ollama
-  
-  Returns a ChatModel instance that can be used with `chat` function."
+  "Creates a ChatModel with automatic failover between providers.
+   Config: :primary, :fallbacks, :max-retries, :retry-delay-ms, :circuit-breaker?"
   [{:keys [primary fallbacks max-retries retry-delay-ms
            circuit-breaker? failure-threshold success-threshold timeout-ms]
     :or {fallbacks []
