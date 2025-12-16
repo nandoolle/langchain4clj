@@ -17,7 +17,6 @@
             JsonArraySchema]))
 
 (defn- generate-tool-spec
-  "Generates a Clojure spec from a schema map for deftool."
   [tool-name schema-map]
   (let [spec-ns (str *ns*)
         tool-spec-ns (str spec-ns "." tool-name)
@@ -34,16 +33,7 @@
                     (s/keys :req-un ~param-spec-keys))}))
 
 (defmacro deftool
-  "Creates a tool with defn-like syntax and inline schema.
-   
-   (deftool get-pokemon
-     \"Fetches Pokemon by name\"
-     {:pokemon-name string?}
-     [{:keys [pokemon-name]}]
-     (fetch-pokemon-data pokemon-name))
-   
-   For no parameters, use empty map:
-   (deftool list-items \"Lists items\" {} [_] (get-items))"
+  "Creates a tool with defn-like syntax. Args: name, docstring, schema-map, args, body."
   [name docstring schema-map args & body]
   {:pre [(symbol? name)
          (string? docstring)

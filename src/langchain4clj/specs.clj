@@ -1,16 +1,8 @@
 (ns langchain4clj.specs
-  "Clojure spec definitions for LangChain4Clj public APIs.
-  
-  Provides comprehensive validation and documentation for all public functions
-  and data structures in the library."
+  "Clojure spec definitions for public APIs."
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as str]))
 
-;; ============================================================================
-;; Common Specs
-;; ============================================================================
-
-;; Provider types
 (s/def ::provider
   #{:openai :anthropic :google-ai-gemini :vertex-ai-gemini :ollama})
 
@@ -45,7 +37,6 @@
 (s/def ::max-retries
   (s/and int? #(>= % 0)))
 
-;; Chat messages
 (s/def ::message
   (s/or :string string?
         :user-message #(instance? dev.langchain4j.data.message.UserMessage %)
@@ -56,10 +47,6 @@
 
 (s/def ::messages
   (s/coll-of ::message :kind vector? :min-count 1))
-
-;; ============================================================================
-;; Model Configuration Specs
-;; ============================================================================
 
 (s/def ::openai-config
   (s/keys :req-un [::provider ::api-key]
@@ -94,10 +81,6 @@
         :vertex-ai ::vertex-ai-config
         :ollama ::ollama-config))
 
-;; ============================================================================
-;; Tool Specs
-;; ============================================================================
-
 (s/def ::tool-name
   keyword?)
 
@@ -114,10 +97,6 @@
 (s/def ::parameters
   (s/or :spec qualified-keyword? ;; clojure.spec
         :schema map?)) ;; malli or custom schema
-
-;; ============================================================================
-;; Structured Output Specs
-;; ============================================================================
 
 (s/def ::schema
   (s/or :simple-map (s/map-of keyword? keyword?)
@@ -141,10 +120,6 @@
   (s/keys :req-un [::schema]
           :opt-un [::strategy ::output-format ::validate? ::max-attempts]))
 
-;; ============================================================================
-;; Resilience Specs
-;; ============================================================================
-
 (s/def ::failure-threshold
   (s/and int? pos?))
 
@@ -164,10 +139,6 @@
   (s/keys :req-un [::fallback-model]
           :opt-un [::circuit-breaker-config]))
 
-;; ============================================================================
-;; Agent Specs
-;; ============================================================================
-
 (s/def ::tools
   (s/coll-of ::tool-definition :kind vector?))
 
@@ -176,10 +147,6 @@
 
 (s/def ::agent-config
   (s/keys :opt-un [::tools ::max-iterations ::system-message]))
-
-;; ============================================================================
-;; Streaming Specs
-;; ============================================================================
 
 (s/def ::on-token
   fn?)
@@ -194,10 +161,6 @@
   (s/keys :req-un [::on-token]
           :opt-un [::on-complete ::on-error]))
 
-;; ============================================================================
-;; Assistant/Memory Specs
-;; ============================================================================
-
 (s/def ::memory-id
   (s/or :string string?
         :keyword keyword?))
@@ -207,10 +170,6 @@
 
 (s/def ::memory-config
   (s/keys :opt-un [::memory-id ::max-messages]))
-
-;; ============================================================================
-;; Common Return Specs
-;; ============================================================================
 
 (s/def ::chat-response
   string?)

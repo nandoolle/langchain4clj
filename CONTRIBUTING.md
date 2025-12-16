@@ -36,8 +36,8 @@ This project adheres to a code of conduct that all contributors are expected to 
 git clone https://github.com/YOUR_USERNAME/langchain4clj.git
 cd langchain4clj
 
-# Add upstream remote
-git remote add upstream https://github.com/langchain4clj.git
+# Add upstream remote (replace with actual repository URL)
+git remote add upstream https://github.com/UPSTREAM_ORG/langchain4clj.git
 ```
 
 ---
@@ -417,8 +417,8 @@ langchain4clj/
 
 - **Documentation**: Check [docs/README.md](docs/README.md)
 - **Examples**: See [examples/](examples/) directory
-- **Issues**: Search existing [GitHub Issues](https://github.com/langchain4clj/issues)
-- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/langchain4clj/discussions)
+- **Issues**: Search existing GitHub Issues
+- **Discussions**: Ask questions in GitHub Discussions
 
 ---
 

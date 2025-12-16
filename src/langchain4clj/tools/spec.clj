@@ -3,10 +3,6 @@
   (:require [clojure.spec.alpha :as s]
             [langchain4clj.tools.protocols :as p]))
 
-;; ============================================================================
-;; Helper functions for Spec analysis
-;; ============================================================================
-
 (defn spec-form
   "Gets the form of a spec, handling different spec types"
   [spec]
@@ -37,10 +33,6 @@
     (#{`coll? 'coll? `vector? 'vector? `seq? 'seq?} pred) "array"
     (#{`any? 'any?} pred) "any"
     :else "string"))
-
-;; ============================================================================
-;; Spec to JSON Schema conversion
-;; ============================================================================
 
 (defn spec->json-schema
   "Converts a Clojure spec to JSON Schema"
@@ -87,10 +79,6 @@
       ;; Default
       :else {:type "any"})))
 
-;; ============================================================================
-;; SchemaProvider implementation for Spec
-;; ============================================================================
-
 (defrecord SpecProvider [spec]
   p/SchemaProvider
 
@@ -115,10 +103,6 @@
 
   (explain-error [_ data]
     (s/explain-str spec data)))
-
-;; ============================================================================
-;; Public API
-;; ============================================================================
 
 (defn create-spec-provider
   "Creates a SchemaProvider for a Clojure spec"
