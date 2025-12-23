@@ -305,20 +305,113 @@
       (is (fn? assistant-fn)))))
 
 (deftest test-create-assistant-with-system-message
-  (testing "Assistant with system message"
-    (let [messages-received (atom nil)
-          mock-model (test-utils/create-java-mock-chat-model
-                      (fn [msg]
-                        ;; Store for inspection but can't easily get full messages list
-                        "Response"))
-
+  (testing "Assistant with static string system message"
+    (let [mock-model (test-utils/create-java-mock-chat-model "Response")
+          memory (assistant/create-memory {:max-messages 10})
           assistant-fn (assistant/create-assistant
                         {:model mock-model
+                         :memory memory
                          :system-message "You are helpful"})]
 
       (assistant-fn "Test")
-      ;; Just verify the assistant works with system message
-      (is (fn? assistant-fn)))))
+      ;; Verify system message is in memory
+      (let [messages (assistant/get-messages memory)]
+        (is (= 3 (count messages))) ;; system + user + ai
+        (is (instance? SystemMessage (first messages)))
+        (is (= "You are helpful" (.text ^SystemMessage (first messages)))))))
+
+  (testing "Assistant with function system message"
+    (let [mock-model (test-utils/create-java-mock-chat-model "Response")
+          memory (assistant/create-memory {:max-messages 10})
+          system-fn (fn [{:keys [user-input]}]
+                      (str "Help the user with: " user-input))
+          assistant-fn (assistant/create-assistant
+                        {:model mock-model
+                         :memory memory
+                         :system-message system-fn})]
+
+      (assistant-fn "coding task")
+      ;; Verify dynamic system message is in memory
+      (let [messages (assistant/get-messages memory)]
+        (is (= 3 (count messages)))
+        (is (instance? SystemMessage (first messages)))
+        (is (= "Help the user with: coding task" (.text ^SystemMessage (first messages)))))))
+
+  (testing "System message function receives template-vars"
+    (let [mock-model (test-utils/create-java-mock-chat-model "Response")
+          memory (assistant/create-memory {:max-messages 10})
+          received-ctx (atom nil)
+          system-fn (fn [ctx]
+                      (reset! received-ctx ctx)
+                      "Dynamic system")
+          assistant-fn (assistant/create-assistant
+                        {:model mock-model
+                         :memory memory
+                         :system-message system-fn})]
+
+      (assistant-fn "test input" {:template-vars {:lang "clojure"}})
+      ;; Verify context was passed correctly
+      (is (= "test input" (:user-input @received-ctx)))
+      (is (= {:lang "clojure"} (:template-vars @received-ctx)))))
+
+  (testing "System message function returning nil adds no message"
+    (let [mock-model (test-utils/create-java-mock-chat-model "Response")
+          memory (assistant/create-memory {:max-messages 10})
+          system-fn (fn [_] nil) ;; Returns nil
+          assistant-fn (assistant/create-assistant
+                        {:model mock-model
+                         :memory memory
+                         :system-message system-fn})]
+
+      (assistant-fn "test")
+      ;; Verify no system message in memory (only user + ai)
+      (let [messages (assistant/get-messages memory)]
+        (is (= 2 (count messages)))
+        (is (instance? UserMessage (first messages))))))
+
+  (testing "System message only added once (not on every call)"
+    (let [call-count (atom 0)
+          mock-model (test-utils/create-java-mock-chat-model "Response")
+          memory (assistant/create-memory {:max-messages 20})
+          system-fn (fn [ctx]
+                      (swap! call-count inc)
+                      (str "Call " @call-count))
+          assistant-fn (assistant/create-assistant
+                        {:model mock-model
+                         :memory memory
+                         :system-message system-fn})]
+
+      (assistant-fn "first")
+      (assistant-fn "second")
+      (assistant-fn "third")
+
+      ;; System function called only once
+      (is (= 1 @call-count))
+      ;; Memory has: 1 system + 3 user + 3 ai = 7
+      (is (= 7 (count (assistant/get-messages memory))))
+      ;; System message has value from first call
+      (is (= "Call 1" (.text ^SystemMessage (first (assistant/get-messages memory)))))))
+
+  (testing "System message re-added after clear-memory"
+    (let [call-count (atom 0)
+          mock-model (test-utils/create-java-mock-chat-model "Response")
+          memory (assistant/create-memory {:max-messages 20})
+          system-fn (fn [{:keys [user-input]}]
+                      (swap! call-count inc)
+                      (str "Helping with: " user-input))
+          assistant-fn (assistant/create-assistant
+                        {:model mock-model
+                         :memory memory
+                         :system-message system-fn})]
+
+      (assistant-fn "task1")
+      (is (= 1 @call-count))
+      (is (= "Helping with: task1" (.text ^SystemMessage (first (assistant/get-messages memory)))))
+
+      ;; Clear and call again
+      (assistant-fn "task2" {:clear-memory? true})
+      (is (= 2 @call-count))
+      (is (= "Helping with: task2" (.text ^SystemMessage (first (assistant/get-messages memory))))))))
 
 (deftest test-create-assistant-template-vars
   (testing "Assistant with template variables"
@@ -427,7 +520,7 @@
       (let [r2 (assistant-fn "Continue")]
         (is (= "Response 2" r2)))
 
-      ;; Check memory has both exchanges (system message + 2 user messages + 2 AI responses)
+      ;; Check memory has: system message + 2 user messages + 2 AI responses = 5
       (is (= 5 (count (assistant/get-messages memory))))
 
       ;; Use template
@@ -435,9 +528,10 @@
                              {:template-vars {:person "Alice"}})]
         (is (string? r3)))
 
-      ;; Clear and start fresh
+      ;; Clear and start fresh - system message will be re-added on next call
       (let [r4 (assistant-fn "New conversation" {:clear-memory? true})]
-        (is (= 2 (count (assistant/get-messages memory))))))))
+        ;; After clear: system message + 1 user + 1 AI = 3
+        (is (= 3 (count (assistant/get-messages memory))))))))
 
 (deftest test-assistant-arity-variations
   (testing "Assistant function works with different arities"

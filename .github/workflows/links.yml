@@ -1,0 +1,47 @@
+name: Check Links
+
+on:
+  push:
+    branches: [main, preview]
+    paths:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main, preview]
+    paths:
+      - '**.md'
+      - 'docs/**'
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  linkcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check links
+        uses: lycheeverse/lychee-action@v1
+        with:
+          args: >-
+            --verbose
+            --no-progress
+            --accept 200,204,301,302,403
+            --exclude-path node_modules
+            --exclude-path CHANGELOG.md
+            --exclude-path doc/ROADMAP.md
+            --exclude 'localhost'
+            --exclude '127.0.0.1'
+            --exclude 'example.com'
+            --exclude '\.html$'
+            './**/*.md'
+          fail: true
+
+      - name: Upload link check report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: link-check-report
+          path: ./lychee/out.md
+          retention-days: 5

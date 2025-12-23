@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [1.3.0] - 2025-12-22
+
+### Added
+- **Chat Listeners** - Observability system for monitoring LLM interactions
+  - `create-listener` for custom event handlers (on-request, on-response, on-error)
+  - `logging-listener` for automatic request/response logging
+  - `token-tracking-listener` for token usage statistics
+  - `message-capturing-listener` for conversation history capture
+  - `compose-listeners` to combine multiple listeners
+  - Full EDN conversion of Java objects for Clojure-friendly data
+- **Thinking/Reasoning Modes** - Extended thinking support for complex reasoning
+  - OpenAI: o1/o3 models with `reasoning_effort` (low, medium, high)
+  - Anthropic: Claude with `extended_thinking` and budget tokens
+  - Gemini: `thinking_config` with budget tokens
+  - Configurable via `:thinking` option in chat requests
+- **Message Serialization** - Convert messages between Java, EDN, and JSON
+  - `message->edn` / `messages->edn` for Java to EDN conversion
+  - `edn->message` / `edn->messages` for EDN to Java conversion
+  - `message->json` / `messages->json` for Java to JSON (LangChain4j format)
+  - `json->message` / `json->messages` for JSON to Java
+  - `parse-tool-arguments` for extracting tool call arguments
+- **Dynamic System Message** - System message now accepts a function
+  - Function receives `{:user-input ... :template-vars ...}` context
+  - Enables dynamic prompts based on user input or runtime state
+
+### Changed
+- Listeners integrate with all model builders via `:listeners` option
+
+## [1.2.0] - 2025-12-18
+
+### Added
+- Token tracking in memory using LangChain4j's TokenUsage
+- Auto-reset strategy to clear memory at configurable thresholds
+- Stateless mode for session isolation with context preservation
+- `defmemory` macro for declarative memory configuration
+- Composable memory strategies via decorator pattern
+
+### Fixed
+- Assistant duplicating AI messages when system-message is set
+
 ## [1.1.0] - 2025-11-28
 
 ### Added

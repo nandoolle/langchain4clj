@@ -16,3 +16,10 @@
 (def default-retry-delay-ms 1000)
 
 (def default-max-retries 2)
+
+;; Memory constants
+(def default-max-messages 100)
+
+(def default-reset-threshold 0.85)
+
+(def default-max-tokens 16000)

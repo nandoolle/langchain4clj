@@ -95,6 +95,7 @@ With message history:
 | `:system-message` | System prompt |
 | `:response-format` | Force JSON output |
 | `:tools` | Tool specifications |
+| `:listeners` | Chat listeners for observability |
 
 ## Threading-First API
 
@@ -106,6 +107,88 @@ With message history:
     (llm/with-logging)
     llm/openai-model)
 ```
+
+## Chat Listeners
+
+Add listeners for observability and monitoring:
+
+```clojure
+(require '[langchain4clj.listeners :as listeners])
+
+;; Token tracking
+(def stats (atom {}))
+(def tracker (listeners/token-tracking-listener stats))
+
+;; Create model with listener
+(def model
+  (llm/create-model
+    {:provider :openai
+     :api-key "sk-..."
+     :listeners [tracker]}))
+
+;; Or using threading
+(def model
+  (-> {:provider :openai :api-key "sk-..."}
+      (llm/with-listeners [(listeners/logging-listener) tracker])
+      llm/create-model))
+```
+
+See [Chat Listeners](LISTENERS.md) for details.
+
+## Thinking/Reasoning Modes
+
+Extended thinking support for complex reasoning tasks:
+
+### OpenAI (o1, o3 models)
+
+```clojure
+(def model
+  (-> {:provider :openai
+       :api-key "sk-..."
+       :model "o3-mini"}
+      (llm/with-thinking {:effort :high    ;; :low :medium :high
+                          :return true})   ;; Include reasoning in response
+      llm/create-model))
+
+(llm/chat model "Solve this complex math problem...")
+```
+
+### Anthropic (Claude 3.5+)
+
+```clojure
+(def model
+  (-> {:provider :anthropic
+       :api-key "sk-ant-..."
+       :model "claude-sonnet-4-20250514"}
+      (llm/with-thinking {:enabled true
+                          :budget-tokens 4096  ;; Max thinking tokens
+                          :return true         ;; Include in response
+                          :send true})         ;; Send in multi-turn
+      llm/create-model))
+```
+
+### Google Gemini (2.5+)
+
+```clojure
+(def model
+  (-> {:provider :google-ai-gemini
+       :api-key "AIza..."
+       :model "gemini-2.5-flash"}
+      (llm/with-thinking {:enabled true
+                          :effort :medium      ;; Or :budget-tokens 4096
+                          :return true})
+      llm/create-model))
+```
+
+### Thinking Options
+
+| Option | Provider | Description |
+|--------|----------|-------------|
+| `:enabled` | Anthropic, Gemini | Enable thinking mode |
+| `:effort` | OpenAI, Gemini | Reasoning effort (:low :medium :high) |
+| `:budget-tokens` | Anthropic, Gemini | Max tokens for thinking |
+| `:return` | All | Include thinking in response |
+| `:send` | Anthropic, Gemini | Send thinking in multi-turn |
 
 ## JSON Mode
 
@@ -131,7 +214,9 @@ Not supported: Anthropic, Vertex AI.
 
 ## Related
 
+- [Chat Listeners](LISTENERS.md) - Observability and monitoring
 - [Streaming](STREAMING.md) - Real-time output
 - [Structured Output](STRUCTURED_OUTPUT.md) - Schema-validated responses
 - [Memory](MEMORY.md) - Conversation management
+- [Message Serialization](MESSAGES.md) - Save and restore messages
 - [Assistant](ASSISTANT.md) - High-level abstractions

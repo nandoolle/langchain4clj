@@ -12,13 +12,13 @@ A Clojure wrapper for [LangChain4j](https://github.com/langchain4j/langchain4j) 
 Add to your `deps.edn`:
 
 ```clojure
-{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.0.3"}}}
+{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.3.0"}}}
 ```
 
 Or to your Leiningen `project.clj`:
 
 ```clojure
-[io.github.nandoolle/langchain4clj "1.0.3"]
+[io.github.nandoolle/langchain4clj "1.3.0"]
 ```
 
 ## Simple Example
@@ -44,6 +44,8 @@ Explore the fundamental capabilities of LangChain4Clj:
 - **[Image Generation](IMAGE.html)** - DALL-E 2/3 integration with quality and style controls
 - **[Native JSON Mode](NATIVE_JSON.html)** - Provider-guaranteed valid JSON output
 - **[Structured Output](STRUCTURED_OUTPUT.html)** - Schema-validated responses with multiple strategies
+- **[Chat Listeners](LISTENERS.html)** - Observability, token tracking, and event handling
+- **[Message Serialization](MESSAGES.html)** - Convert messages to EDN/JSON for persistence
 
 ## Advanced Features
 

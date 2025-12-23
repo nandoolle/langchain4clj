@@ -3,30 +3,23 @@
   (:require [langchain4clj.core :as core]
             [langchain4clj.tools :as tools]
             [langchain4clj.macros :as macros]
+            [langchain4clj.memory.core :as mem-core]
             [clojure.string :as str]
             [clojure.data.json :as json])
   (:import [dev.langchain4j.data.message UserMessage SystemMessage ToolExecutionResultMessage]
            [dev.langchain4j.model.chat ChatModel]))
 
-(defprotocol ChatMemory
-  (add-message! [this message])
-  (get-messages [this])
-  (clear! [this]))
+;; Re-export memory protocol for backward compatibility
+(def ChatMemory mem-core/ChatMemory)
+(def add-message! mem-core/add-message!)
+(def get-messages mem-core/get-messages)
+(def clear! mem-core/clear!)
 
 (defn create-memory
-  "Creates a message window memory with optional :max-messages."
+  "Creates a message window memory with optional :max-messages.
+   Uses new memory implementation with integrated token tracking."
   [{:keys [max-messages] :or {max-messages 10}}]
-  (let [messages (atom [])]
-    (reify ChatMemory
-      (add-message! [_ message]
-        (swap! messages
-               (fn [msgs]
-                 (let [updated (conj msgs message)]
-                   (if (> (count updated) max-messages)
-                     (vec (take-last max-messages updated))
-                     updated)))))
-      (get-messages [_] @messages)
-      (clear! [_] (reset! messages [])))))
+  (mem-core/create-basic-memory {:max-messages max-messages}))
 
 (defn process-template
   "Replaces {{key}} placeholders with values from variables map."
@@ -36,6 +29,24 @@
      (str/replace s (str "{{" (name k) "}}") (str v)))
    template
    variables))
+
+(defn- resolve-system-message
+  "Resolve system-message to a string.
+   
+   Accepts:
+   - nil -> returns nil
+   - string -> returns as-is
+   - function -> calls with context map and returns result
+   
+   Context map contains:
+   - :user-input - the current user input
+   - :template-vars - template variables if provided"
+  [system-message context]
+  (cond
+    (nil? system-message) nil
+    (fn? system-message) (system-message context)
+    (string? system-message) system-message
+    :else (str system-message)))
 
 (defn execute-tool-calls
   "Executes tool calls from AI response."
@@ -78,38 +89,69 @@
             (recur updated-messages (inc iteration))))))))
 
 (defn create-assistant
-  "Creates an assistant with model, tools, memory and system message."
+  "Creates an assistant with model, tools, memory and system message.
+   
+   The system message is stored in memory on first call, allowing get-messages
+   to return the complete conversation history including the system prompt.
+   
+   Options:
+   - :model - ChatModel instance (required)
+   - :tools - vector of tools (optional)
+   - :memory - ChatMemory instance (optional, defaults to 10 message window)
+   - :system-message - string or function (optional)
+     - If string: used as-is
+     - If function: called with {:user-input \"...\" :template-vars {...}}
+   - :max-iterations - max tool execution loops (optional, default 10)
+   
+   Example with dynamic system message:
+   ```clojure
+   (create-assistant
+     {:model model
+      :system-message (fn [{:keys [user-input]}]
+                        (str \"Help the user with: \" user-input))})
+   ```"
   [{:keys [model tools memory system-message max-iterations]
     :or {memory (create-memory {})
          max-iterations 10}}]
   {:pre [(instance? ChatModel model)]}
 
-  (let [tools (or tools [])]
+  (let [tools (or tools [])
+        system-message-added? (atom false)]
     (fn assistant
       ([user-input] (assistant user-input {}))
       ([user-input {:keys [template-vars clear-memory?]}]
-       (when clear-memory? (clear! memory))
+       (when clear-memory?
+         (clear! memory)
+         (reset! system-message-added? false))
+
+       ;; Add system message to memory once (on first call or after clear)
+       ;; System message can be string or function
+       (when (and system-message (not @system-message-added?))
+         (let [context {:user-input user-input
+                        :template-vars template-vars}
+               resolved (resolve-system-message system-message context)]
+           (when resolved
+             (add-message! memory (SystemMessage. resolved))))
+         (reset! system-message-added? true))
 
        (let [processed-input (if template-vars
                                (process-template user-input template-vars)
                                user-input)
-             existing-messages (get-messages memory)
              user-message (UserMessage. processed-input)
-             messages (cond-> []
-                        system-message (conj (SystemMessage. system-message))
-                        true (into existing-messages)
-                        true (conj user-message))
-             original-count (count existing-messages)
+             _ (add-message! memory user-message)
+             messages (get-messages memory)
              result (chat-with-tools
                      {:model model
                       :messages messages
                       :tools tools
-                      :max-iterations max-iterations})]
+                      :max-iterations max-iterations})
+             ;; Get only the new messages (AI response and any tool results)
+             ;; by comparing with what we had before
+             new-messages (drop (count messages) (:messages result))]
 
-         (let [new-messages (drop original-count (:messages result))
-               messages-to-save (remove #(instance? SystemMessage %) new-messages)]
-           (doseq [msg messages-to-save]
-             (add-message! memory msg)))
+         ;; Save new messages (AI responses, tool results) to memory
+         (doseq [msg new-messages]
+           (add-message! memory msg))
 
          (:result result))))))
 
@@ -132,7 +174,22 @@
   (assoc config :memory memory-instance))
 
 (defn with-system-message
-  "Sets system message for assistant config."
+  "Sets system message for assistant config.
+   
+   Accepts:
+   - string: static system message
+   - function: (fn [{:keys [user-input template-vars]}] \"dynamic message\")
+   
+   Example:
+   ```clojure
+   ;; Static
+   (with-system-message config \"You are helpful\")
+   
+   ;; Dynamic based on user input
+   (with-system-message config 
+     (fn [{:keys [user-input]}]
+       (str \"Help with: \" user-input)))
+   ```"
   [config system-msg]
   (assoc config :system-message system-msg))
 
