@@ -1,7 +1,6 @@
 (ns langchain4clj.core-test
   (:require [clojure.test :refer [deftest is testing]]
-            [langchain4clj.core :as core]
-            )
+            [langchain4clj.core :as core])
   (:import [dev.langchain4j.model.chat ChatModel]
            [dev.langchain4j.data.message AiMessage]
            [dev.langchain4j.model.chat.response ChatResponse]
@@ -694,4 +693,61 @@
         (is (= "vertex-ai-gemini" (core/chat vertex-ai "test")))
         (is (= "ollama" (core/chat ollama "test")))
         (is (= "mistral" (core/chat mistral "test")))))))
+
+;; ============================================================================
+;; Environment Variable Resolution Tests
+;; ============================================================================
+
+(deftest test-resolve-env-refs-direct-values
+  (testing "resolve-env-refs passes through direct values unchanged"
+    (is (= {:api-key "direct-key"}
+           (core/resolve-env-refs {:api-key "direct-key"})))
+    (is (= {:temperature 0.7 :max-tokens 1000}
+           (core/resolve-env-refs {:temperature 0.7 :max-tokens 1000})))
+    (is (= {:nested {:value "test"}}
+           (core/resolve-env-refs {:nested {:value "test"}})))))
+
+(deftest test-resolve-env-refs-env-pattern
+  (testing "resolve-env-refs resolves [:env \"VAR_NAME\"] pattern"
+    ;; Use HOME which should always exist
+    (let [home-value (System/getenv "HOME")]
+      (is (= {:path home-value}
+             (core/resolve-env-refs {:path [:env "HOME"]}))))))
+
+(deftest test-resolve-env-refs-nested
+  (testing "resolve-env-refs handles nested maps"
+    (let [home-value (System/getenv "HOME")]
+      (is (= {:config {:api-key home-value :other "static"}}
+             (core/resolve-env-refs {:config {:api-key [:env "HOME"] :other "static"}}))))))
+
+(deftest test-resolve-env-refs-sequential
+  (testing "resolve-env-refs handles sequential collections"
+    (let [home-value (System/getenv "HOME")]
+      (is (= [{:a home-value} {:b "static"}]
+             (core/resolve-env-refs [{:a [:env "HOME"]} {:b "static"}]))))))
+
+(deftest test-resolve-env-refs-missing-var
+  (testing "resolve-env-refs returns nil for missing env vars"
+    (is (= {:api-key nil}
+           (core/resolve-env-refs {:api-key [:env "DEFINITELY_NOT_SET_12345"]})))))
+
+(deftest test-env-overrides-dynamic-var
+  (testing "*env-overrides* dynamic var takes precedence"
+    (binding [core/*env-overrides* {"TEST_VAR" "override-value"}]
+      (is (= {:api-key "override-value"}
+             (core/resolve-env-refs {:api-key [:env "TEST_VAR"]}))))))
+
+(deftest test-create-model-resolves-env-refs
+  (testing "create-model automatically resolves env refs"
+    (let [config-received (atom nil)]
+      (with-redefs [core/build-model (fn [config]
+                                       (reset! config-received config)
+                                       (reify dev.langchain4j.model.chat.ChatModel
+                                         (^String chat [_ ^String m] "test")))]
+        (binding [core/*env-overrides* {"MY_API_KEY" "resolved-key"}]
+          (core/create-model {:provider :openai
+                              :api-key [:env "MY_API_KEY"]
+                              :model "gpt-4o"})
+          (is (= "resolved-key" (:api-key @config-received)))
+          (is (= "gpt-4o" (:model @config-received))))))))
 

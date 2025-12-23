@@ -44,11 +44,11 @@ The recommended way to create tools:
 
 ```clojure
 ;; Simple tool
-(tools/deftool calculate
-  "Performs basic arithmetic operations"
-  {:expression string?}
-  [{:keys [expression]}]
-  (eval (read-string expression)))
+(tools/deftool add-numbers
+  "Adds two numbers together"
+  {:a number? :b number?}
+  [{:keys [a b]}]
+  (+ a b))
 
 ;; Multiple parameters
 (tools/deftool compare-numbers

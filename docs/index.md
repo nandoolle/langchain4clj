@@ -39,6 +39,9 @@ Or to your Leiningen `project.clj`:
 Explore the fundamental capabilities of LangChain4Clj:
 
 - **[Core Chat](CORE_CHAT.html)** - Model creation, chat function, and provider configuration
+- **[Model Presets](PRESETS.html)** - Pre-configured models for quick setup
+- **[Environment Resolution](ENV_RESOLUTION.html)** - Secure API key management with `[:env "VAR"]`
+- **[JSON Schema Converter](SCHEMA.html)** - Convert JSON Schema to LangChain4j format
 - **[Memory Patterns](MEMORY.html)** - Conversation history and context management
 - **[Streaming Responses](STREAMING.html)** - Real-time streaming with callbacks and error handling
 - **[Image Generation](IMAGE.html)** - DALL-E 2/3 integration with quality and style controls
@@ -52,6 +55,7 @@ Explore the fundamental capabilities of LangChain4Clj:
 Build sophisticated AI applications:
 
 - **[Tools & Function Calling](TOOLS.html)** - Extend LLM capabilities with custom functions
+- **[Tool Helpers](TOOLS_HELPERS.html)** - JSON Schema tool definitions for external integration
 - **[Assistant System](ASSISTANT.html)** - Memory management and autonomous tool execution
 - **[Multi-Agent Systems](AGENTS.html)** - Orchestrate multiple agents for complex workflows
 - **[RAG (Document Processing)](RAG.html)** - Load, parse, and split documents for retrieval-augmented generation
