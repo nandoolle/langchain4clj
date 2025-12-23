@@ -20,6 +20,9 @@ LangChain4Clj is a **pure translation layer** - we wrap LangChain4j's functional
 - **Assistant System** - Memory management, tool execution loops, templates
 - **Structured Output** - Automatic parsing with retry logic
 - **Multi-Agent Orchestration** - Sequential, parallel, and collaborative agents
+- **Chat Listeners** - Observability, token tracking, and event handling
+- **Thinking/Reasoning Modes** - Extended thinking for OpenAI o1/o3, Anthropic, Gemini
+- **Message Serialization** - Convert messages to EDN/JSON for persistence
 - **100% Data-Driven** - Configure everything with Clojure maps
 - **Idiomatic API** - Threading-first, composable, pure Clojure
 
@@ -28,7 +31,7 @@ LangChain4Clj is a **pure translation layer** - we wrap LangChain4j's functional
 Add to your `deps.edn`:
 
 ```clojure
-{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.0.4"}}}
+{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.3.0"}}}
 ```
 
 With schema libraries (optional):
@@ -296,6 +299,102 @@ Generate images using DALL-E 3 and DALL-E 2:
 ```
 
 **Tip:** See `examples/image_generation_demo.clj` for comprehensive examples including HD quality, batch generation, and error handling.
+
+### Chat Listeners
+
+Monitor LLM interactions with observability hooks:
+
+```clojure
+(require '[langchain4clj.listeners :as listeners])
+
+;; Track token usage
+(def stats (atom {}))
+(def tracker (listeners/token-tracking-listener stats))
+
+;; Create model with listener
+(def model
+  (llm/create-model
+    {:provider :openai
+     :api-key (System/getenv "OPENAI_API_KEY")
+     :listeners [tracker]}))
+
+(llm/chat model "Hello!")
+@stats
+;; => {:input-tokens 10 :output-tokens 15 :total-tokens 25 :request-count 1 ...}
+
+;; Compose multiple listeners
+(def combined
+  (listeners/compose-listeners
+    (listeners/logging-listener)
+    (listeners/token-tracking-listener stats)))
+```
+
+**Pre-built listeners:**
+
+- `logging-listener` - Log requests/responses
+- `token-tracking-listener` - Accumulate token statistics
+- `message-capturing-listener` - Record conversation history
+- `create-listener` - Custom handlers for on-request, on-response, on-error
+
+See [docs/LISTENERS.md](docs/LISTENERS.md) for complete documentation.
+
+### Thinking/Reasoning Modes
+
+Extended thinking for complex reasoning tasks:
+
+```clojure
+;; OpenAI o3-mini with reasoning
+(def model
+  (-> {:provider :openai
+       :api-key (System/getenv "OPENAI_API_KEY")
+       :model "o3-mini"}
+      (llm/with-thinking {:effort :high :return true})
+      llm/create-model))
+
+;; Anthropic Claude with extended thinking
+(def model
+  (-> {:provider :anthropic
+       :api-key (System/getenv "ANTHROPIC_API_KEY")
+       :model "claude-sonnet-4-20250514"}
+      (llm/with-thinking {:enabled true :budget-tokens 4096})
+      llm/create-model))
+
+;; Google Gemini with reasoning
+(def model
+  (-> {:provider :google-ai-gemini
+       :api-key (System/getenv "GEMINI_API_KEY")
+       :model "gemini-2.5-flash"}
+      (llm/with-thinking {:enabled true :effort :medium})
+      llm/create-model))
+```
+
+**Options:** `:enabled`, `:effort` (:low/:medium/:high), `:budget-tokens`, `:return`, `:send`
+
+### Message Serialization
+
+Convert messages between Java, EDN, and JSON for persistence:
+
+```clojure
+(require '[langchain4clj.messages :as msg])
+
+;; Java -> EDN
+(msg/messages->edn (.messages memory))
+;; => [{:type :user :contents [...]} {:type :ai :text "..."}]
+
+;; EDN -> Java
+(msg/edn->messages [{:type :user :text "Hi"}
+                    {:type :ai :text "Hello!"}])
+
+;; JSON (LangChain4j format)
+(msg/messages->json messages)  ;; Java -> JSON
+(msg/json->messages json-str)  ;; JSON -> Java
+
+;; Persist to file
+(spit "chat.edn" (pr-str (msg/messages->edn messages)))
+(msg/edn->messages (edn/read-string (slurp "chat.edn")))
+```
+
+See [docs/MESSAGES.md](docs/MESSAGES.md) for complete documentation.
 
 ### Tool Calling
 
@@ -568,10 +667,13 @@ Build production-ready systems with automatic failover between LLM providers:
 
 ## Documentation
 
-- [Provider Failover & Circuit Breaker Guide](docs/RESILIENCE.md)
 - [Full API Documentation](https://nandoolle.github.io/langchain4clj/)
-- [Tool System Guide](docs/TOOLS.md)
+- [Core Chat Guide](docs/CORE_CHAT.md)
 - [Assistant Tutorial](docs/ASSISTANT.md)
+- [Tool System Guide](docs/TOOLS.md)
+- [Chat Listeners](docs/LISTENERS.md)
+- [Message Serialization](docs/MESSAGES.md)
+- [Provider Failover & Resilience](docs/RESILIENCE.md)
 - [Examples](examples/)
 
 ## Roadmap

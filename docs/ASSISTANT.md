@@ -51,10 +51,17 @@ High-level API for creating assistants with automatic memory management and tool
 (def assistant (assistant/create-assistant
                  {:model model :tools [calculator weather-tool]}))
 
-;; With system message
+;; With system message (string)
 (def assistant (assistant/create-assistant
                  {:model model
                   :system-message "You are a pirate. Respond in pirate speak."}))
+
+;; With dynamic system message (function)
+(def assistant (assistant/create-assistant
+                 {:model model
+                  :system-message (fn [{:keys [user-input template-vars]}]
+                                    (str "Current user: " (:username template-vars)
+                                         ". Respond helpfully."))}))
 
 ;; Complete configuration
 (def assistant (assistant/create-assistant
@@ -172,6 +179,69 @@ Assistants automatically detect when tools are needed, call them, process result
                   :memory (->DatabaseMemory db-connection)}))
 ```
 
+## Dynamic System Message
+
+System message accepts either a string or a function for runtime customization:
+
+### Static String
+
+```clojure
+(def assistant
+  (assistant/create-assistant
+    {:model model
+     :system-message "You are a helpful assistant."}))
+```
+
+### Dynamic Function
+
+The function receives a context map with `:user-input` and `:template-vars`:
+
+```clojure
+(def assistant
+  (assistant/create-assistant
+    {:model model
+     :system-message (fn [{:keys [user-input template-vars]}]
+                       (str "User: " (:username template-vars) "\n"
+                            "Role: " (:role template-vars) "\n"
+                            "Be helpful and professional."))}))
+
+;; Call with template-vars
+(assistant "Help me with my order"
+           {:template-vars {:username "Alice" :role "premium"}})
+```
+
+### Common Patterns
+
+```clojure
+;; Time-aware prompts
+(def assistant
+  (assistant/create-assistant
+    {:model model
+     :system-message (fn [_]
+                       (let [hour (.getHour (java.time.LocalTime/now))]
+                         (cond
+                           (< hour 12) "Good morning! How can I help?"
+                           (< hour 18) "Good afternoon! How can I help?"
+                           :else "Good evening! How can I help?")))}))
+
+;; User-context aware
+(def assistant
+  (assistant/create-assistant
+    {:model model
+     :system-message (fn [{:keys [template-vars]}]
+                       (let [{:keys [language expertise]} template-vars]
+                         (str "Respond in " (or language "English") ". "
+                              "Adjust complexity for " (or expertise "beginner") " level.")))}))
+
+;; Returning nil skips system message
+(def assistant
+  (assistant/create-assistant
+    {:model model
+     :system-message (fn [{:keys [template-vars]}]
+                       (when (:include-system-prompt template-vars)
+                         "You are a helpful assistant."))}))
+```
+
 ## Configuration Reference
 
 ```clojure
@@ -179,7 +249,7 @@ Assistants automatically detect when tools are needed, call them, process result
 {:model model                  ;; Required: ChatLanguageModel instance
  :tools [tool1 tool2]          ;; Optional: Vector of tools
  :memory memory-instance       ;; Optional: Memory instance (default: 10 messages)
- :system-message "..."         ;; Optional: System message
+ :system-message "..." or fn   ;; Optional: String or (fn [{:keys [user-input template-vars]}] ...)
  :max-iterations 10}           ;; Optional: Max tool iterations (default: 10)
 
 ;; create-memory options
@@ -191,4 +261,6 @@ Assistants automatically detect when tools are needed, call them, process result
 - [Tools & Function Calling](TOOLS.md) - Creating tools
 - [Core Chat](CORE_CHAT.md) - Underlying chat functionality
 - [Memory Patterns](MEMORY.md) - Memory management
+- [Message Serialization](MESSAGES.md) - Save and restore conversations
+- [Chat Listeners](LISTENERS.md) - Observability and monitoring
 - [Multi-Agent Systems](AGENTS.md) - Complex orchestration

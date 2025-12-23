@@ -1,147 +1,81 @@
----
-layout: default
-title: Memory Patterns
----
+# Chat Memory
 
-# Memory Patterns
-
-Managing conversation history in langchain4clj.
+Comprehensive chat memory management with integrated token tracking and auto-reset strategies.
 
 ## Quick Start
 
 ```clojure
-(require '[langchain4clj.assistant :as assistant]
-         '[langchain4clj.core :as llm])
+(require '[langchain4clj.memory :as mem]
+         '[langchain4clj.assistant :as asst])
 
-(def model (llm/create-model {:provider :openai
-                               :api-key (System/getenv "OPENAI_API_KEY")}))
+;; Create basic memory
+(def memory (mem/create-memory {:max-messages 100}))
 
-(def my-memory (assistant/memory {:max-messages 20}))
-
+;; Use with assistant
 (def my-assistant
-  (-> {:model model}
-      assistant/assistant
-      (assistant/with-memory my-memory)
-      assistant/build-assistant))
-
-(my-assistant "My name is Alice")
-;; => "Nice to meet you, Alice!"
-
-(my-assistant "What's my name?")
-;; => "Your name is Alice."
+  (asst/create-assistant
+    {:model model
+     :memory memory}))
 ```
 
-## ChatMemory Protocol
+## Core Features
+
+### 1. Basic Memory
+
+Sliding window memory that keeps the last N messages:
 
 ```clojure
-(defprotocol ChatMemory
-  (add-message! [this message])
-  (get-messages [this])
-  (clear! [this]))
+(def memory (mem/create-memory {:max-messages 50}))
+
+;; Add messages
+(mem/add-message! memory (UserMessage. "Hello"))
+(mem/add-message! memory (AiMessage. "Hi there"))
+
+;; Get all messages
+(mem/get-messages memory)
+
+;; Get stats
+(mem/stats memory)  ; => {:message-count 2 :token-count 0}
+
+;; Clear
+(mem/clear! memory)
 ```
 
-## Creating Memory
+### 2. Token Tracking (Integrated)
+
+Track token usage by passing TokenUsage metadata from ChatResponse:
 
 ```clojure
-;; Default (10 messages)
-(def memory (assistant/memory {}))
+(let [response (llm/chat model "Hello")]
+  (mem/add-message! memory
+                    (.aiMessage response)
+                    {:token-usage (-> response .metadata .tokenUsage)}))
 
-;; Custom limit
-(def memory (assistant/memory {:max-messages 50}))
+(mem/stats memory)  ; => {:message-count 1 :token-count 127}
 ```
 
-When memory exceeds the limit, oldest messages are removed automatically.
+### 3. Auto-Reset
 
-## Using with Assistants
+Automatically reset when reaching thresholds:
 
 ```clojure
-(def my-assistant
-  (-> {:model model}
-      assistant/assistant
-      (assistant/with-memory (assistant/memory {:max-messages 30}))
-      (assistant/with-system-message "You are helpful.")
-      assistant/build-assistant))
-
-;; Clear memory
-(my-assistant "Start fresh" {:clear-memory? true})
+(def smart-memory
+  (-> (mem/create-memory {:max-messages 100})
+      (mem/with-auto-reset {:reset-threshold 0.85
+                            :max-tokens 16000
+                            :context [(SystemMessage. "Context")]})))
 ```
 
-## Common Patterns
+### 4. Stateless Mode
 
-### Sliding Window (Default)
+Clears before each session:
 
 ```clojure
-(def memory (assistant/memory {:max-messages 20}))
+(def stateless-memory
+  (-> (mem/create-memory)
+      (mem/with-stateless-mode {:context [(SystemMessage. "Context")]})))
 ```
 
-### Per-Session Memory
+## See Full Documentation
 
-```clojure
-(defn create-conversation []
-  (let [memory (assistant/memory {:max-messages 50})]
-    (-> {:model model}
-        assistant/assistant
-        (assistant/with-memory memory)
-        assistant/build-assistant)))
-
-(def conv-1 (create-conversation))
-(def conv-2 (create-conversation))
-```
-
-### Shared Memory
-
-```clojure
-(def shared-memory (assistant/memory {:max-messages 100}))
-
-(def assistant-1
-  (-> {:model model}
-      assistant/assistant
-      (assistant/with-memory shared-memory)
-      assistant/build-assistant))
-
-(def assistant-2
-  (-> {:model model}
-      assistant/assistant
-      (assistant/with-memory shared-memory)
-      assistant/build-assistant))
-```
-
-### Stateless
-
-```clojure
-(defn ask [question]
-  (my-assistant question {:clear-memory? true}))
-```
-
-## Manual Management
-
-```clojure
-(import '[dev.langchain4j.data.message UserMessage AiMessage SystemMessage])
-
-(def history (atom []))
-
-(defn chat [user-input]
-  (swap! history conj (UserMessage. user-input))
-  (let [messages (into [(SystemMessage. "You are helpful.")] @history)
-        response (llm/chat model messages {})]
-    (swap! history conj (AiMessage. (.text (.aiMessage response))))
-    (.text (.aiMessage response))))
-```
-
-## Guidelines
-
-Choose memory size based on use case:
-- Q&A bots: 10 messages
-- Customer support: 30 messages
-- Long conversations: 50+ messages
-
-Token limits per model:
-- GPT-4o: 128K tokens
-- Claude 3.5: 200K tokens
-- Gemini 1.5: 1M tokens
-
-## Related
-
-- [Core Chat](CORE_CHAT.md) - Basic chat
-- [Assistant](ASSISTANT.md) - High-level abstractions
-- [Streaming](STREAMING.md) - Real-time output
+For complete API reference and examples, see the main README.

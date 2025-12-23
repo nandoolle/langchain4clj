@@ -7,9 +7,10 @@
         dev.langchain4j/langchain4j-open-ai {:mvn/version "1.8.0"}
         dev.langchain4j/langchain4j-anthropic {:mvn/version "1.8.0"}
         dev.langchain4j/langchain4j-mistral-ai {:mvn/version "1.8.0"}
-        ;; Keep Gemini at 1.0.0-beta5 (streaming not available until 1.9.0+)
-        dev.langchain4j/langchain4j-google-ai-gemini {:mvn/version "1.0.0-beta5"}
-        dev.langchain4j/langchain4j-vertex-ai-gemini {:mvn/version "1.0.0-beta5"}
+        ;; Gemini 1.8.0 - aligned with clojure-mcp, supports thinking/reasoning
+        dev.langchain4j/langchain4j-google-ai-gemini {:mvn/version "1.8.0"}
+        ;; Vertex AI Gemini - uses beta versioning scheme
+        dev.langchain4j/langchain4j-vertex-ai-gemini {:mvn/version "1.8.0-beta15"}
         ;; Ollama for local models (Llama, Mistral, Gemma, etc.)
         dev.langchain4j/langchain4j-ollama {:mvn/version "1.8.0"}
         ;; RAG - Document parsing (Phase 1) - beta version matches core 1.8.0
