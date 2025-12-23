@@ -13,6 +13,9 @@ LangChain4Clj is a **pure translation layer** - we wrap LangChain4j's functional
 ## Features
 
 - **Multiple LLM Providers** - OpenAI, Anthropic, Google AI Gemini, Vertex AI Gemini, Mistral, Ollama
+- **Model Presets** - Pre-configured models with sensible defaults for quick setup
+- **Environment Variable Resolution** - Secure API key management with `[:env "VAR"]` pattern
+- **JSON Schema Converter** - Define tool parameters with standard JSON Schema syntax
 - **Image Generation** - DALL-E 3 & DALL-E 2 support with HD quality and style control
 - **Provider Failover** - Automatic retry and fallback for high availability
 - **Streaming Responses** - Real-time token streaming for better UX
@@ -23,6 +26,7 @@ LangChain4Clj is a **pure translation layer** - we wrap LangChain4j's functional
 - **Chat Listeners** - Observability, token tracking, and event handling
 - **Thinking/Reasoning Modes** - Extended thinking for OpenAI o1/o3, Anthropic, Gemini
 - **Message Serialization** - Convert messages to EDN/JSON for persistence
+- **Provider-Specific Options** - Full access to Anthropic cache, OpenAI organization, Gemini code execution
 - **100% Data-Driven** - Configure everything with Clojure maps
 - **Idiomatic API** - Threading-first, composable, pure Clojure
 
@@ -31,7 +35,7 @@ LangChain4Clj is a **pure translation layer** - we wrap LangChain4j's functional
 Add to your `deps.edn`:
 
 ```clojure
-{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.3.0"}}}
+{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.4.0"}}}
 ```
 
 With schema libraries (optional):
@@ -68,6 +72,55 @@ With schema libraries (optional):
    :max-tokens 100         ; Limit response length
    :system-message "You are a physics teacher"})
 ;; => Returns ChatResponse with metadata
+```
+
+### Model Presets (Quick Start)
+
+Use pre-configured models with sensible defaults:
+
+```clojure
+(require '[langchain4clj.presets :as presets])
+(require '[langchain4clj.core :as llm])
+
+;; Get a preset and create model
+(def model 
+  (llm/create-model 
+    (presets/get-preset :openai/gpt-4o 
+                        {:api-key [:env "OPENAI_API_KEY"]})))
+
+;; Available presets
+(presets/available-presets)
+;; => (:openai/gpt-4o :openai/gpt-4o-mini :openai/o3-mini 
+;;     :anthropic/claude-sonnet-4 :anthropic/claude-opus-4
+;;     :google/gemini-2-5-flash :google/gemini-2-5-pro ...)
+
+;; Reasoning models with thinking enabled
+(def reasoning-model
+  (llm/create-model
+    (presets/get-preset :anthropic/claude-sonnet-4-reasoning
+                        {:api-key [:env "ANTHROPIC_API_KEY"]})))
+```
+
+### Environment Variable Resolution
+
+Secure API key management with `[:env "VAR"]` pattern:
+
+```clojure
+;; Instead of hardcoding API keys...
+(llm/create-model {:provider :openai
+                   :api-key [:env "OPENAI_API_KEY"]  ; Resolved at runtime
+                   :base-url [:env "OPENAI_BASE_URL"] ; Optional
+                   :model "gpt-4o"})
+
+;; Works with nested configs
+(llm/create-model {:provider :anthropic
+                   :api-key [:env "ANTHROPIC_API_KEY"]
+                   :anthropic {:cache-system-messages true}})
+
+;; For testing, override env vars
+(binding [llm/*env-overrides* {"OPENAI_API_KEY" "test-key"}]
+  (llm/create-model {:provider :openai
+                     :api-key [:env "OPENAI_API_KEY"]}))
 ```
 
 ### Using Different Providers
@@ -442,12 +495,12 @@ For dynamic tool creation or complex schemas:
 
 ```clojure
 ;; Using Clojure Spec (advanced schemas)
-(def calculator
+(def add-numbers
   (tools/create-tool
-    {:name "calculator"
-     :description "Performs calculations"
-     :params-schema ::calc-params  ; Spec keyword
-     :fn #(eval (read-string (:expression %)))}))
+    {:name "add_numbers"
+     :description "Adds two numbers together"
+     :params-schema ::add-params  ; Spec keyword
+     :fn (fn [{:keys [a b]}] (+ a b))}))
 
 ;; Using Plumatic Schema
 (def weather-tool
@@ -472,6 +525,41 @@ For dynamic tool creation or complex schemas:
 - Complex validation with custom predicates
 - Integration with existing spec/schema/malli definitions
 - Programmatic tool configuration
+
+#### JSON Schema Tool Definitions
+
+For integration with external systems that use JSON Schema (MCP servers, OpenAPI, etc.):
+
+```clojure
+(require '[langchain4clj.tools.helpers :as helpers])
+
+;; Define tools with JSON Schema
+(def my-tools
+  (helpers/tools->map
+    [{:name "get_weather"
+      :description "Get weather for a location"
+      :parameters {:type :object
+                   :properties {:location {:type :string}
+                                :units {:enum ["celsius" "fahrenheit"]}}
+                   :required [:location]}
+      :fn (fn [{:keys [location units]}]
+            (get-weather location (or units "celsius")))}
+     {:name "add_numbers"
+      :description "Add two numbers"
+      :parameters {:type :object
+                   :properties {:a {:type :number}
+                                :b {:type :number}}
+                   :required [:a :b]}
+      :fn (fn [{:keys [a b]}] (+ a b))}]))
+
+;; Use with AiServices
+(-> (AiServices/builder MyInterface)
+    (.chatModel model)
+    (.tools my-tools)
+    (.build))
+```
+
+See [docs/TOOLS_HELPERS.md](docs/TOOLS_HELPERS.md) for complete documentation.
 
 #### Automatic Parameter Normalization
 
@@ -642,33 +730,37 @@ Build production-ready systems with automatic failover between LLM providers:
 
 ```clojure
 ;; Simple inline validation with deftool (RECOMMENDED)
-(tools/deftool calculator
-  "Performs mathematical calculations with optional precision"
-  {:expression string?
+(tools/deftool add-numbers
+  "Adds two numbers together with optional precision formatting"
+  {:a number?
+   :b number?
    :precision int?}  ; Optional params supported!
-  [{:keys [expression precision] :or {precision 2}}]
-  (let [result (eval (read-string expression))]
-    (format (str "%." precision "f") (double result))))
+  [{:keys [a b precision] :or {precision 2}}]
+  (format (str "%." precision "f") (double (+ a b))))
 
 ;; For complex validation, use Spec with create-tool
-(s/def ::expression string?)
+(s/def ::a number?)
+(s/def ::b number?)
 (s/def ::precision (s/and int? #(>= % 0) #(<= % 10)))  ; 0-10 decimal places
-(s/def ::calc-params (s/keys :req-un [::expression]
+(s/def ::calc-params (s/keys :req-un [::a ::b]
                              :opt-un [::precision]))
 
 (def advanced-calc
   (tools/create-tool
-    {:name "calculator"
+    {:name "add_numbers"
+     :description "Adds two numbers with optional precision"
      :params-schema ::calc-params
-     :fn (fn [{:keys [expression precision] :or {precision 2}}]
-           (let [result (eval (read-string expression))]
-             (format (str "%." precision "f") (double result))))}))
+     :fn (fn [{:keys [a b precision] :or {precision 2}}]
+           (format (str "%." precision "f") (double (+ a b))))}))
 ```
 
 ## Documentation
 
 - [Full API Documentation](https://nandoolle.github.io/langchain4clj/)
 - [Core Chat Guide](docs/CORE_CHAT.md)
+- [Model Presets](docs/PRESETS.md)
+- [Environment Resolution](docs/ENV_RESOLUTION.md)
+- [JSON Schema Converter](docs/SCHEMA.md)
 - [Assistant Tutorial](docs/ASSISTANT.md)
 - [Tool System Guide](docs/TOOLS.md)
 - [Chat Listeners](docs/LISTENERS.md)

@@ -15,10 +15,15 @@ High-level API for creating assistants with automatic memory management and tool
 (require '[langchain4clj.tools :as tools])
 
 (tools/deftool calculator
-  "Performs basic math"
-  {:expression string?}
-  [{:keys [expression]}]
-  (str (eval (read-string expression))))
+  "Performs basic arithmetic operations"
+  {:a number? :b number? :operation string?}
+  [{:keys [a b operation]}]
+  (case operation
+    "add" (+ a b)
+    "subtract" (- a b)
+    "multiply" (* a b)
+    "divide" (/ a b)
+    (str "Unknown operation: " operation)))
 
 (def model (llm/create-model {:provider :openai
                               :api-key (System/getenv "OPENAI_API_KEY")}))

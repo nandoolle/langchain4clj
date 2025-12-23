@@ -2,9 +2,77 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [1.4.0] - 2025-12-23
+
+### Added
+
+- **New Model Presets** - Added 5 new Anthropic model presets for latest Claude models
+  - `:anthropic/claude-haiku-4-5` - Claude Haiku 4.5 (CLAUDE_HAIKU_4_5_20251001)
+  - `:anthropic/claude-sonnet-4-5` - Claude Sonnet 4.5 (CLAUDE_SONNET_4_5_20250929)
+  - `:anthropic/claude-sonnet-4-5-reasoning` - Claude Sonnet 4.5 with extended thinking
+  - `:anthropic/claude-opus-4-1` - Claude Opus 4.1 (CLAUDE_OPUS_4_1_20250805)
+  - `:anthropic/claude-opus-4-1-reasoning` - Claude Opus 4.1 with extended thinking
+
+### Changed
+
+- **LangChain4j Upgrade** - Updated from 1.8.0 to 1.9.1
+  - Core modules: `langchain4j-core`, `langchain4j`, `langchain4j-open-ai`, `langchain4j-anthropic`, `langchain4j-mistral-ai`, `langchain4j-google-ai-gemini`, `langchain4j-ollama` now at 1.9.1
+  - Beta modules: `langchain4j-vertex-ai-gemini` and `langchain4j-document-parser-apache-tika` now at 1.9.1-beta17
+
+### Added
+
+- **Tool Registration Helpers** (`langchain4clj.tools.helpers`) - Bridge JSON Schema tool definitions with LangChain4j
+  - `create-tool-spec` - Create ToolSpecification from JSON Schema EDN
+  - `create-tool-executor` - Create ToolExecutor from Clojure functions
+  - `create-safe-executor` - Error-handling executor wrapper
+  - `deftool-from-schema` - Define complete tool (spec + executor) from JSON Schema
+  - `tools->map` - Create ToolSpecification->ToolExecutor map for AiServices
+  - `tools->specs` - Extract just specifications from definitions
+  - `find-executor` - Lookup executor by tool name
+  - Automatic JSON argument parsing to Clojure maps
+  - Automatic result serialization (strings, JSON encoding)
+  - Safe mode with customizable error handlers
+- **AiServices Bridge** (`langchain4clj.tools/tools->aiservices`) - Convert `deftool` outputs to AiServices format
+
+### Added
+
+- **JSON Schema Converter** - Convert JSON Schema EDN to LangChain4j JsonSchema
+  - `edn->json-schema` multimethod supporting all JSON Schema types
+  - `json-string->json-schema` for parsing JSON strings
+  - `schema-for-tool` convenience function for tool parameters
+  - `any-type-schema` for dynamic value types
+  - Support for: string, number, integer, boolean, array, object, enum, mixed types
+
+### Added
+
+- **Model Presets** - Pre-configured model settings for quick setup
+  - 23 presets across OpenAI, Anthropic, and Google providers
+  - Reasoning model presets with thinking enabled (o1, o3, claude-*-reasoning, gemini-*-reasoning)
+  - `get-preset` function with optional overrides
+  - `available-presets` and `presets-by-provider` for discovery
+- **Environment Variable Resolution** - Secure configuration with `[:env "VAR"]` pattern
+  - `resolve-env-refs` for manual resolution
+  - `create-model` now automatically resolves env refs
+  - `*env-overrides*` dynamic var for testing
+  - Recursive resolution in nested maps and collections
+- **Provider-Specific Options** - Full access to provider-specific builder options
+  - Anthropic: `cache-system-messages`, `cache-tools`, `version`, `beta`
+  - OpenAI: `organization-id`, `project-id`, `strict-tools`, `parallel-tool-calls`, `store`, `metadata`, `service-tier`
+  - Google Gemini: `allow-code-execution`, `include-code-execution-output`, `response-logprobs`, `safety-settings`
+- **Extended Builder Options** - Common options now available across all providers
+  - `base-url` for custom endpoints
+  - `top-p`, `top-k`, `seed` for fine-grained sampling control
+  - `frequency-penalty`, `presence-penalty` for response variation
+  - `stop-sequences` for controlled generation
+
+### Changed
+
+- `create-model` now automatically resolves `[:env "VAR"]` patterns in config
+
 ## [1.3.0] - 2025-12-22
 
 ### Added
+
 - **Chat Listeners** - Observability system for monitoring LLM interactions
   - `create-listener` for custom event handlers (on-request, on-response, on-error)
   - `logging-listener` for automatic request/response logging
@@ -28,11 +96,13 @@ All notable changes to this project will be documented in this file. This change
   - Enables dynamic prompts based on user input or runtime state
 
 ### Changed
+
 - Listeners integrate with all model builders via `:listeners` option
 
 ## [1.2.0] - 2025-12-18
 
 ### Added
+
 - Token tracking in memory using LangChain4j's TokenUsage
 - Auto-reset strategy to clear memory at configurable thresholds
 - Stateless mode for session isolation with context preservation
@@ -40,11 +110,13 @@ All notable changes to this project will be documented in this file. This change
 - Composable memory strategies via decorator pattern
 
 ### Fixed
+
 - Assistant duplicating AI messages when system-message is set
 
 ## [1.1.0] - 2025-11-28
 
 ### Added
+
 - Mistral AI provider support - Added Mistral to the list of supported LLM providers
 - Mistral model creation via `create-model` with `:provider :mistral`
 - `mistral-model` helper function for convenient Mistral model creation
@@ -53,13 +125,15 @@ All notable changes to this project will be documented in this file. This change
 ## [1.0.4] - 2025-11-14
 
 ### Fixed
+
 - Added `docs/cljdoc.edn` configuration with documentation tree structure
 - Core API documentation will build successfully on cljdoc
 - Optional schema features (malli/schema) are documented in prose guides to avoid dependency conflicts
 
 ### Note
-Optional namespaces (`tools.malli`, `tools.schema`) won't have API docs on cljdoc since their dependencies are optional.
-These features are fully documented in the TOOLS.md guide instead.
+
+Optional namespaces (`tools.malli`, `tools.schema`, `tools.helpers`) won't have API docs on cljdoc since their dependencies are optional.
+These features are fully documented in the TOOLS.md and TOOLS_HELPERS.md guides instead.
 
 ## [1.0.3] - 2025-11-14
 

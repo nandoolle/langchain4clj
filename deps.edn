@@ -2,19 +2,15 @@
  :deps {org.clojure/clojure {:mvn/version "1.12.1"}
         org.clojure/data.json {:mvn/version "2.5.0"}
         org.clojure/tools.logging {:mvn/version "1.3.0"}
-        dev.langchain4j/langchain4j-core {:mvn/version "1.8.0"}
-        dev.langchain4j/langchain4j {:mvn/version "1.8.0"}
-        dev.langchain4j/langchain4j-open-ai {:mvn/version "1.8.0"}
-        dev.langchain4j/langchain4j-anthropic {:mvn/version "1.8.0"}
-        dev.langchain4j/langchain4j-mistral-ai {:mvn/version "1.8.0"}
-        ;; Gemini 1.8.0 - aligned with clojure-mcp, supports thinking/reasoning
-        dev.langchain4j/langchain4j-google-ai-gemini {:mvn/version "1.8.0"}
-        ;; Vertex AI Gemini - uses beta versioning scheme
-        dev.langchain4j/langchain4j-vertex-ai-gemini {:mvn/version "1.8.0-beta15"}
-        ;; Ollama for local models (Llama, Mistral, Gemma, etc.)
-        dev.langchain4j/langchain4j-ollama {:mvn/version "1.8.0"}
-        ;; RAG - Document parsing (Phase 1) - beta version matches core 1.8.0
-        dev.langchain4j/langchain4j-document-parser-apache-tika {:mvn/version "1.8.0-beta15"}
+        dev.langchain4j/langchain4j-core {:mvn/version "1.9.1"}
+        dev.langchain4j/langchain4j {:mvn/version "1.9.1"}
+        dev.langchain4j/langchain4j-open-ai {:mvn/version "1.9.1"}
+        dev.langchain4j/langchain4j-anthropic {:mvn/version "1.9.1"}
+        dev.langchain4j/langchain4j-mistral-ai {:mvn/version "1.9.1"}
+        dev.langchain4j/langchain4j-google-ai-gemini {:mvn/version "1.9.1"}
+        dev.langchain4j/langchain4j-vertex-ai-gemini {:mvn/version "1.9.1-beta17"}
+        dev.langchain4j/langchain4j-ollama {:mvn/version "1.9.1"}
+        dev.langchain4j/langchain4j-document-parser-apache-tika {:mvn/version "1.9.1-beta17"}
         metosin/jsonista {:mvn/version "0.3.10"}}
  :aliases
  {:run-m {:main-opts ["-m" "langchain4clj"]}
@@ -42,7 +38,6 @@
           :jvm-opts ["-Djdk.attach.allowAttachSelf"]
           :main-opts ["-m" "nrepl.cmdline" "--port" "7888"]}
 
-  ;; Schema library support - users can choose what they need
   :with-schema {:extra-deps {prismatic/schema {:mvn/version "1.4.1"}}}
 
   :with-malli {:extra-deps {metosin/malli {:mvn/version "0.16.4"}}}
@@ -54,4 +49,8 @@
   :dev {:extra-paths ["dev" "test" "examples"]
         :extra-deps {prismatic/schema {:mvn/version "1.4.1"}
                      metosin/malli {:mvn/version "0.16.4"}
-                     org.clojure/test.check {:mvn/version "1.1.1"}}}}}
+                     org.clojure/test.check {:mvn/version "1.1.1"}}}
+
+  :lint {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2024.11.14"}}
+         :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test"]}}}
+

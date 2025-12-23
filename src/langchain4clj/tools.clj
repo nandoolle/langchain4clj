@@ -2,6 +2,7 @@
   "Tool support with automatic schema detection (Spec, Schema, Malli)."
   (:require [langchain4clj.tools.protocols :as p]
             [langchain4clj.tools.spec :as spec-impl]
+            [langchain4clj.tools.helpers :as helpers]
             [langchain4clj.specs :as specs]
             [clojure.spec.alpha :as s]
             [clojure.walk :as walk]
@@ -445,4 +446,50 @@
 (s/fdef get-tool
   :args (s/cat :tool-name (s/or :keyword keyword? :string string?))
   :ret (s/nilable map?))
+
+;; =============================================================================
+;; AiServices Bridge
+;; =============================================================================
+
+(defn tools->aiservices
+  "Convert tools created with `deftool` to the format expected by LangChain4j AiServices.
+
+   Returns a map of {ToolSpecification -> ToolExecutor} ready for use with
+   LangChain4j AiServices directly.
+
+   This is useful when you want to use AiServices instead of the langchain4clj
+   assistant system. For most use cases, prefer using `create-assistant` from
+   `langchain4clj.assistant` which handles tool integration automatically.
+
+   Example:
+   ```clojure
+   (deftool get-weather
+     \"Get weather for a location\"
+     {:location string?, :units string?}
+     [{:keys [location units]}]
+     (str \"Weather in \" location \": 22°\" (or units \"C\")))
+
+   (deftool add-numbers
+     \"Add two numbers together\"
+     {:a number?, :b number?}
+     [{:keys [a b]}]
+     (+ a b))
+
+   ;; Convert for AiServices
+   (def tools-map (tools->aiservices get-weather add-numbers))
+
+   ;; Use with AiServices directly
+   (-> (AiServices/builder MyInterface)
+       (.chatLanguageModel model)
+       (.tools tools-map)
+       (.build))
+   ```"
+  [& tools]
+  (reduce
+   (fn [acc {:keys [specification executor-fn]}]
+     (assoc acc
+            specification
+            (helpers/create-tool-executor executor-fn)))
+   {}
+   tools))
 

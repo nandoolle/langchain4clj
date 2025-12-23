@@ -16,6 +16,58 @@
            [dev.langchain4j.data.message UserMessage SystemMessage]
            [java.time Duration]))
 
+;; ==============================================================================
+;; Environment Variable Resolution
+;; ==============================================================================
+
+(def ^:dynamic *env-overrides*
+  "Dynamic var for overriding environment variables in tests.
+   When bound to a map, these values take precedence over System/getenv."
+  nil)
+
+(defn- get-env
+  "Gets environment variable, checking *env-overrides* first for testing."
+  [var-name]
+  (or (when *env-overrides*
+        (get *env-overrides* var-name))
+      (System/getenv var-name)))
+
+(defn resolve-env-refs
+  "Resolves [:env \"VAR_NAME\"] references to environment variable values.
+   Recursively processes nested maps and collections.
+   
+   Note: Environment variables are always returned as strings. Use this
+   pattern primarily for string values like :api-key and :base-url.
+   
+   Examples:
+   (resolve-env-refs {:api-key [:env \"OPENAI_API_KEY\"]})
+   ;; => {:api-key \"actual-key-value\"}
+   
+   (resolve-env-refs {:api-key \"direct-value\"})
+   ;; => {:api-key \"direct-value\"}"
+  [config]
+  (cond
+    ;; Handle [:env "VAR_NAME"] pattern
+    (and (vector? config)
+         (= 2 (count config))
+         (= :env (first config))
+         (string? (second config)))
+    (get-env (second config))
+
+    ;; Recursively process maps
+    (map? config)
+    (reduce-kv (fn [m k v]
+                 (assoc m k (resolve-env-refs v)))
+               {}
+               config)
+
+    ;; Recursively process sequential collections
+    (sequential? config)
+    (mapv resolve-env-refs config)
+
+    ;; Return other values as-is
+    :else config))
+
 (defn- duration-from-millis [millis]
   (Duration/ofMillis millis))
 
@@ -55,6 +107,7 @@
 (macros/defbuilder build-openai-model
   (OpenAiChatModel/builder)
   {:api-key :apiKey
+   :base-url :baseUrl
    :model :modelName
    :temperature :temperature
    :timeout [:timeout duration-from-millis]
@@ -63,13 +116,31 @@
    :max-retries :maxRetries
    :max-tokens :maxTokens
    :listeners :listeners
+   :top-p :topP
+   :seed [:seed int-from-long]
+   :frequency-penalty :frequencyPenalty
+   :presence-penalty :presencePenalty
+   :stop-sequences :stopSequences
    ;; Thinking/reasoning support
    :return-thinking :returnThinking
-   :default-request-parameters :defaultRequestParameters})
+   :default-request-parameters :defaultRequestParameters
+   ;; Provider-specific: OpenAI
+   :organization-id :organizationId
+   :project-id :projectId
+   :max-completion-tokens [:maxCompletionTokens int-from-long]
+   :logit-bias :logitBias
+   :strict-json-schema :strictJsonSchema
+   :user :user
+   :strict-tools :strictTools
+   :parallel-tool-calls :parallelToolCalls
+   :store :store
+   :metadata :metadata
+   :service-tier :serviceTier})
 
 (macros/defbuilder build-anthropic-model
   (AnthropicChatModel/builder)
   {:api-key :apiKey
+   :base-url :baseUrl
    :model :modelName
    :temperature :temperature
    :timeout [:timeout duration-from-millis]
@@ -78,11 +149,19 @@
    :max-retries :maxRetries
    :max-tokens :maxTokens
    :listeners :listeners
+   :top-p :topP
+   :top-k [:topK int-from-long]
+   :stop-sequences :stopSequences
    ;; Thinking/Extended reasoning support
    :thinking-type :thinkingType
    :thinking-budget-tokens [:thinkingBudgetTokens int-from-long]
    :return-thinking :returnThinking
-   :send-thinking :sendThinking})
+   :send-thinking :sendThinking
+   ;; Provider-specific: Anthropic
+   :version :version
+   :beta :beta
+   :cache-system-messages :cacheSystemMessages
+   :cache-tools :cacheTools})
 
 (macros/defbuilder build-google-ai-gemini-model
   (GoogleAiGeminiChatModel/builder)
@@ -95,10 +174,23 @@
    :max-retries :maxRetries
    :max-tokens :maxOutputTokens
    :listeners :listeners
+   :top-p :topP
+   :top-k [:topK int-from-long]
+   :seed [:seed int-from-long]
+   :frequency-penalty :frequencyPenalty
+   :presence-penalty :presencePenalty
+   :stop-sequences :stopSequences
    ;; Thinking/reasoning support
    :thinking-config :thinkingConfig
    :return-thinking :returnThinking
-   :send-thinking :sendThinking})
+   :send-thinking :sendThinking
+   ;; Provider-specific: Google Gemini
+   :allow-code-execution :allowCodeExecution
+   :include-code-execution-output :includeCodeExecutionOutput
+   :response-logprobs :responseLogprobs
+   :enable-enhanced-civic-answers :enableEnhancedCivicAnswers
+   :logprobs [:logprobs int-from-long]
+   :safety-settings :safetySettings})
 
 (macros/defbuilder build-vertex-ai-gemini-model
   (VertexAiGeminiChatModel/builder)
@@ -267,9 +359,24 @@
                               (select-keys config [:api-key :max-retries :max-tokens :listeners]))))
 
 (defn create-model
-  "Create a chat model from config map. See docs/CORE_CHAT.md for details."
+  "Create a chat model from config map. See docs/CORE_CHAT.md for details.
+   
+   Automatically resolves [:env \"VAR_NAME\"] references to environment variables.
+   
+   Examples:
+   ```clojure
+   ;; Direct API key
+   (create-model {:provider :openai
+                  :api-key \"sk-...\"
+                  :model \"gpt-4o\"})
+   
+   ;; Environment variable reference
+   (create-model {:provider :openai
+                  :api-key [:env \"OPENAI_API_KEY\"]
+                  :model \"gpt-4o\"})
+   ```"
   [config]
-  (build-model config))
+  (build-model (resolve-env-refs config)))
 
 (defn openai-model
   "Creates an OpenAI chat model. Supports threading-first pattern."
