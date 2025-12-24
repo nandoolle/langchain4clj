@@ -54,10 +54,15 @@ Presets are namespaced keywords that identify specific model configurations:
 | Preset | Model | Description |
 |--------|-------|-------------|
 | `:anthropic/claude-3-5-haiku` | claude-3-5-haiku | Fast, efficient model |
+| `:anthropic/claude-haiku-4-5` | claude-haiku-4-5 | Latest Haiku - fast & capable |
 | `:anthropic/claude-sonnet-4` | claude-sonnet-4 | Balanced performance |
 | `:anthropic/claude-sonnet-4-reasoning` | claude-sonnet-4 | With extended thinking |
+| `:anthropic/claude-sonnet-4-5` | claude-sonnet-4-5 | Latest Sonnet - enhanced |
+| `:anthropic/claude-sonnet-4-5-reasoning` | claude-sonnet-4-5 | With extended thinking |
 | `:anthropic/claude-opus-4` | claude-opus-4 | Most capable model |
 | `:anthropic/claude-opus-4-reasoning` | claude-opus-4 | With extended thinking |
+| `:anthropic/claude-opus-4-1` | claude-opus-4-1 | Enhanced Opus |
+| `:anthropic/claude-opus-4-1-reasoning` | claude-opus-4-1 | With extended thinking |
 
 ### Google Gemini Models
 
