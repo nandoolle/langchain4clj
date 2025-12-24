@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [1.6.0] - 2025-12-24
+
+### Added
+
+- **New OpenAI Model Presets** - Added 4 new OpenAI model presets for GPT-5 and O3 Pro
+  - `:openai/gpt-5` - GPT-5 with thinking enabled (gpt-5-2025-08-07)
+  - `:openai/gpt-5-mini` - GPT-5 Mini with thinking enabled
+  - `:openai/gpt-5-nano` - GPT-5 Nano with thinking enabled
+  - `:openai/o3-pro` - O3 Pro reasoning model (o3-pro-2025-06-10)
+
+### Changed
+
+- Total model presets now: 32 (was 28)
+
 ## [1.4.0] - 2025-12-23
 
 ### Added
