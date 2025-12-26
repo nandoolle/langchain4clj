@@ -117,6 +117,32 @@
            :model "o4-mini"
            :thinking {:effort :medium}})
 
+   ;; GPT-5 family (reasoning models with thinking)
+   :openai/gpt-5
+   (merge model-base
+          {:provider :openai
+           :model "gpt-5-2025-08-07"
+           :thinking {:effort :medium}})
+
+   :openai/gpt-5-mini
+   (merge model-base
+          {:provider :openai
+           :model "gpt-5-mini-2025-08-07"
+           :thinking {:effort :medium}})
+
+   :openai/gpt-5-nano
+   (merge model-base
+          {:provider :openai
+           :model "gpt-5-nano-2025-08-07"
+           :thinking {:effort :medium}})
+
+   ;; O3 Pro
+   :openai/o3-pro
+   (merge reasoning-model-base
+          {:provider :openai
+           :model "o3-pro-2025-06-10"
+           :thinking {:effort :medium}})
+
    ;; ==========================================================================
    ;; Anthropic Models
    ;; ==========================================================================

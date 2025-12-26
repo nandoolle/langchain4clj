@@ -1,6 +1,6 @@
 (ns langchain4clj.tools-test
   "Tests for unified tool support"
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [langchain4clj.tools :as tools]
             [clojure.spec.alpha :as s]))
 
@@ -143,11 +143,11 @@
                        (swap! attempts inc)
                        (if (< @attempts 3)
                          (throw (Exception. "Failed"))
-                         "Success"))})]
+                         "Success"))})
+          retry-tool (tools/with-retry tool 3)]
 
-      (let [retry-tool (tools/with-retry tool 3)]
-        (with-redefs [println (fn [_] nil)] ; Suppress output
-          (is (= "Success" (tools/execute-tool retry-tool {}))))
+      (with-redefs [println (fn [_] nil)]  ; Suppress output
+        (is (= "Success" (tools/execute-tool retry-tool {})))
         (is (= 3 @attempts))))))
 
 (deftest test-find-tool

@@ -5,7 +5,6 @@
             [langchain4clj.assistant :as asst])
   (:import [dev.langchain4j.data.message UserMessage SystemMessage AiMessage]
            [dev.langchain4j.model.chat ChatModel]
-           [dev.langchain4j.model.chat.response ChatResponse]
            [dev.langchain4j.model.output TokenUsage]))
 
 ;; Mock chat model for debugging
@@ -22,7 +21,7 @@
                                 (.tokenUsage token-usage)
                                 (.build))))]
     (reify ChatModel
-      (^String chat [_ ^String message]
+      (^String chat [_ ^String _message]
         (let [response-text (nth responses @call-count "Mock response")]
           (println "DEBUG: String chat called, count:" @call-count)
           (swap! call-count inc)
@@ -32,7 +31,7 @@
         (println "DEBUG: List chat called, messages count:" (count messages))
         (create-response))
 
-      (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
+      (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest _request]
         (println "DEBUG: ChatRequest chat called")
         (create-response)))))
 

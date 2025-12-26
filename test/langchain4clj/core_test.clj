@@ -51,10 +51,10 @@
     (let [simple-called (atom false)
           request-called (atom false)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _message]
                          (reset! simple-called true)
                          "Simple response")
-                       (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
+                       (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest _request]
                          (reset! request-called true)
                          (throw (Exception. "Should not use ChatRequest for empty options"))))]
 
@@ -68,10 +68,10 @@
     (let [simple-called (atom false)
           request-called (atom false)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _message]
                          (reset! simple-called true)
                          "Simple")
-                       (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
+                       (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest _request]
                          (reset! request-called true)
                          (-> (ChatResponse/builder)
                              (.aiMessage (-> (AiMessage/builder)
@@ -96,7 +96,7 @@
   (testing "Chat with multiple options passes them to ChatRequest"
     (let [request-received (atom nil)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _message]
                          "simple")
                        (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
                          (reset! request-received request)
@@ -119,10 +119,10 @@
     (let [simple-calls (atom 0)
           request-calls (atom 0)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _message]
                          (swap! simple-calls inc)
                          "simple")
-                       (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
+                       (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest _request]
                          (swap! request-calls inc)
                          (-> (ChatResponse/builder)
                              (.aiMessage (-> (AiMessage/builder)
@@ -158,9 +158,9 @@
   (testing "Various option types work correctly"
     (let [options-tested (atom #{})
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _message]
                          "simple")
-                       (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
+                       (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest _request]
                          ;; Track which options triggered ChatRequest
                          (reset! options-tested #{:chatrequest-used})
                          (-> (ChatResponse/builder)
@@ -208,7 +208,7 @@
   (testing "Chat with JSON mode passes ResponseFormat to ChatRequest"
     (let [response-format-received (atom nil)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _message]
                          "simple")
                        (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
                          (reset! response-format-received (.responseFormat request))
@@ -231,7 +231,7 @@
   (testing "JSON mode works with threading-first pattern"
     (let [response-format-received (atom nil)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _message]
                          "simple")
                        (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
                          (reset! response-format-received (.responseFormat request))
@@ -252,7 +252,7 @@
   (testing "JSON mode combines with other options correctly"
     (let [request-received (atom nil)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _message]
                          "simple")
                        (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
                          (reset! request-received request)
@@ -297,7 +297,7 @@
                       (when (= :google-ai-gemini (:provider config))
                         (reset! config-received config)
                         (reify ChatModel
-                          (^String chat [_ ^String message] "test"))))]
+                          (^String chat [_ ^String _] "test"))))]
 
         ;; Test with minimal config
         (core/create-model {:provider :google-ai-gemini :api-key "test-key"})
@@ -313,7 +313,7 @@
                       (when (= :google-ai-gemini (:provider config))
                         (reset! config-received config)
                         (reify ChatModel
-                          (^String chat [_ ^String message] "test"))))]
+                          (^String chat [_ ^String _] "test"))))]
 
         (core/create-model
          {:provider :google-ai-gemini
@@ -341,7 +341,7 @@
                   (fn [config]
                     (when (= :google-ai-gemini (:provider config))
                       (reify ChatModel
-                        (^String chat [_ ^String message]
+                        (^String chat [_ ^String _]
                           (str "Model: " (:model config))))))]
 
       (let [model (core/create-model
@@ -389,7 +389,7 @@
                       (when (= :vertex-ai-gemini (:provider config))
                         (reset! config-received config)
                         (reify ChatModel
-                          (^String chat [_ ^String message] "test"))))]
+                          (^String chat [_ ^String _] "test"))))]
 
         ;; Test with minimal config
         (core/create-model {:provider :vertex-ai-gemini :project "test-project"})
@@ -405,7 +405,7 @@
                       (when (= :vertex-ai-gemini (:provider config))
                         (reset! config-received config)
                         (reify ChatModel
-                          (^String chat [_ ^String message] "test"))))]
+                          (^String chat [_ ^String _] "test"))))]
 
         (core/create-model
          {:provider :vertex-ai-gemini
@@ -432,7 +432,7 @@
                   (fn [config]
                     (when (= :vertex-ai-gemini (:provider config))
                       (reify ChatModel
-                        (^String chat [_ ^String message]
+                        (^String chat [_ ^String _]
                           (str "Model: " (:model config))))))]
 
       (let [model (core/create-model
@@ -484,7 +484,7 @@
                     (fn [config]
                       (reset! config-received config)
                       (reify ChatModel
-                        (^String chat [_ ^String message] "test")))]
+                        (^String chat [_ ^String _] "test")))]
 
         ;; Test with minimal config (no API key needed)
         (core/create-model {:provider :ollama})
@@ -501,7 +501,7 @@
                       (when (= :ollama (:provider config))
                         (reset! config-received config)
                         (reify ChatModel
-                          (^String chat [_ ^String message] "test"))))]
+                          (^String chat [_ ^String _] "test"))))]
 
         (core/create-model
          {:provider :ollama
@@ -536,7 +536,7 @@
                   (fn [config]
                     (when (= :ollama (:provider config))
                       (reify ChatModel
-                        (^String chat [_ ^String message]
+                        (^String chat [_ ^String _]
                           (str "Model: " (:model config))))))]
 
       (let [model (core/create-model
@@ -561,7 +561,7 @@
 (deftest test-ollama-helper-function
   (testing "ollama-model helper function works correctly"
     (with-redefs [core/build-ollama-model
-                  (fn [config]
+                  (fn [_config]
                     (reify ChatModel
                       (^String chat [_ ^String message]
                         (str "Ollama helper: " message))))]
@@ -593,7 +593,7 @@
                     (fn [config]
                       (reset! config-received config)
                       (reify ChatModel
-                        (^String chat [_ ^String message] "test")))]
+                        (^String chat [_ ^String _] "test")))]
 
         ;; Test with minimal config
         (core/create-model {:provider :mistral :api-key "test-key"})
@@ -609,7 +609,7 @@
                       (when (= :mistral (:provider config))
                         (reset! config-received config)
                         (reify ChatModel
-                          (^String chat [_ ^String message] "test"))))]
+                          (^String chat [_ ^String _] "test"))))]
 
         (core/create-model
          {:provider :mistral
@@ -638,7 +638,7 @@
                   (fn [config]
                     (when (= :mistral (:provider config))
                       (reify ChatModel
-                        (^String chat [_ ^String message]
+                        (^String chat [_ ^String _]
                           (str "Model: " (:model config))))))]
 
       (let [model (core/create-model
@@ -665,12 +665,12 @@
   (testing "All providers create ChatModel instances"
     (with-redefs [core/build-model (fn [config]
                                      (case (:provider config)
-                                       :openai (reify ChatModel (^String chat [_ ^String m] "openai"))
-                                       :anthropic (reify ChatModel (^String chat [_ ^String m] "anthropic"))
-                                       :google-ai-gemini (reify ChatModel (^String chat [_ ^String m] "google-ai-gemini"))
-                                       :vertex-ai-gemini (reify ChatModel (^String chat [_ ^String m] "vertex-ai-gemini"))
-                                       :ollama (reify ChatModel (^String chat [_ ^String m] "ollama"))
-                                       :mistral (reify ChatModel (^String chat [_ ^String m] "mistral"))
+                                       :openai (reify ChatModel (^String chat [_ ^String _] "openai"))
+                                       :anthropic (reify ChatModel (^String chat [_ ^String _] "anthropic"))
+                                       :google-ai-gemini (reify ChatModel (^String chat [_ ^String _] "google-ai-gemini"))
+                                       :vertex-ai-gemini (reify ChatModel (^String chat [_ ^String _] "vertex-ai-gemini"))
+                                       :ollama (reify ChatModel (^String chat [_ ^String _] "ollama"))
+                                       :mistral (reify ChatModel (^String chat [_ ^String _] "mistral"))
                                        nil))]
 
       (let [openai (core/create-model {:provider :openai :api-key "test"})
@@ -743,7 +743,7 @@
       (with-redefs [core/build-model (fn [config]
                                        (reset! config-received config)
                                        (reify dev.langchain4j.model.chat.ChatModel
-                                         (^String chat [_ ^String m] "test")))]
+                                         (^String chat [_ ^String _] "test")))]
         (binding [core/*env-overrides* {"MY_API_KEY" "resolved-key"}]
           (core/create-model {:provider :openai
                               :api-key [:env "MY_API_KEY"]

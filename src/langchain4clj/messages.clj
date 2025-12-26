@@ -51,7 +51,9 @@
    ;; Load from DB
    (json->messages (:data (jdbc/get-by-id db :chats id)))
    ```"
-  (:require [clojure.data.json :as json])
+  (:require [clojure.data.json :as json]
+            [clojure.string :as str]
+            [langchain4clj.tools :as tools])
   (:import [dev.langchain4j.data.message
             ChatMessage
             ChatMessageSerializer
@@ -180,7 +182,7 @@
    ```"
   [{:keys [type text contents tool-execution-requests id tool-name] :as edn}]
   (let [type-kw (if (string? type) (keyword type) type)
-        normalized-type (keyword (clojure.string/lower-case (name type-kw)))]
+        normalized-type (keyword (str/lower-case (name type-kw)))]
     (case normalized-type
       :user
       (if text
@@ -299,20 +301,22 @@
 
 (defn parse-tool-arguments
   "Parse JSON string arguments in tool-execution-requests to EDN maps.
-   
+
    Tool arguments come as JSON strings from the LLM. This helper
    parses them into Clojure maps for easier manipulation.
-   
+   Also adds kebab-case versions of any camelCase keys for Clojure compatibility.
+
    Arguments:
    - message-edn: EDN map from message->edn (must be :ai type with tool requests)
-   
+
    Returns: Updated message-edn with parsed :arguments
-   
+
    Example:
    ```clojure
    (-> (message->edn ai-msg)
        (parse-tool-arguments))
    ;; Tool requests now have {:arguments {:x 1}} instead of {:arguments \"{\\\"x\\\":1}\"}
+   ;; CamelCase keys also get kebab-case versions: {:userName \"John\" :user-name \"John\"}
    ```"
   [message-edn]
   (if-let [tool-reqs (:tool-execution-requests message-edn)]
@@ -320,7 +324,9 @@
            :tool-execution-requests
            (mapv (fn [req]
                    (if-let [args (:arguments req)]
-                     (assoc req :arguments (json/read-str args :key-fn keyword))
+                     (assoc req :arguments
+                            (-> (json/read-str args :key-fn keyword)
+                                (tools/denormalize-tool-params)))
                      req))
                  tool-reqs))
     message-edn))

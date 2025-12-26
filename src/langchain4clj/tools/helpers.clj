@@ -60,6 +60,8 @@
    ```"
   (:require
    [clojure.data.json :as json]
+   [clojure.string :as str]
+   [clojure.walk :as walk]
    [langchain4clj.schema :as schema])
   (:import
    [dev.langchain4j.agent.tool ToolSpecification ToolExecutionRequest]
@@ -110,15 +112,72 @@
     (.build builder)))
 
 ;; =============================================================================
+;; Key Case Conversion (for LLM response handling)
+;; =============================================================================
+
+(defn- is-camel-case?
+  "Returns true if string contains uppercase letters (indicating camelCase)."
+  [s]
+  (boolean (re-find #"[A-Z]" s)))
+
+(defn- camel->kebab
+  "Converts camelCase to kebab-case keyword."
+  [k]
+  (let [s (if (keyword? k) (name k) (str k))]
+    (if (is-camel-case? s)
+      (keyword (str/lower-case (str/replace s #"([a-z])([A-Z])" "$1-$2")))
+      (if (keyword? k) k (keyword s)))))
+
+(defn- add-kebab-for-keyword
+  "If keyword k is camelCase, adds both k and its kebab-case version to map m."
+  [m k v]
+  (let [k-str (name k)]
+    (if (is-camel-case? k-str)
+      (assoc m k v (camel->kebab k) v)
+      (assoc m k v))))
+
+(defn- add-kebab-for-string
+  "If string k is camelCase, adds k, keyword k, and kebab-case versions to map m."
+  [m k v]
+  (if (is-camel-case? k)
+    (assoc m k v (camel->kebab k) v (keyword k) v)
+    (assoc m k v)))
+
+(defn- denormalize-map-keys
+  "Add kebab-case versions of camelCase keys in a single map."
+  [m]
+  (reduce-kv
+   (fn [acc k v]
+     (cond
+       (keyword? k) (add-kebab-for-keyword acc k v)
+       (string? k) (add-kebab-for-string acc k v)
+       :else (assoc acc k v)))
+   {}
+   m))
+
+(defn- denormalize-params
+  "Denormalizes parameter keys from LLM response for Clojure compatibility.
+   CamelCase keywords get kebab-case equivalents added."
+  [params]
+  (walk/postwalk
+   (fn [form]
+     (if (map? form)
+       (denormalize-map-keys form)
+       form))
+   params))
+
+;; =============================================================================
 ;; Tool Executor Creation
 ;; =============================================================================
 
 (defn- parse-arguments
-  "Parse JSON arguments string to Clojure map with keyword keys."
+  "Parse JSON arguments string to Clojure map with keyword keys.
+   Also adds kebab-case versions of any camelCase keys for Clojure compatibility."
   [^String args-json]
   (if (or (nil? args-json) (empty? args-json))
     {}
-    (json/read-str args-json :key-fn keyword)))
+    (-> (json/read-str args-json :key-fn keyword)
+        (denormalize-params))))
 
 (defn- result->string
   "Convert a result to string for LLM consumption.
@@ -243,7 +302,7 @@
    (:spec weather-tool)     ;; => ToolSpecification
    (:executor weather-tool) ;; => ToolExecutor
    ```"
-  [{:keys [name description parameters] tool-fn :fn :as tool-def}]
+  [{:keys [name description] tool-fn :fn :as tool-def}]
   {:pre [(string? name) (string? description) (fn? tool-fn)]}
   {:name name
    :spec (create-tool-spec (select-keys tool-def [:name :description :parameters]))

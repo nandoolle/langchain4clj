@@ -153,6 +153,11 @@
   [s]
   (boolean (re-find #"[^a-zA-Z0-9_]" s)))
 
+(defn- is-camel-case?
+  "Returns true if string contains uppercase letters (indicating camelCase)."
+  [s]
+  (boolean (re-find #"[A-Z]" s)))
+
 (defn- kebab->camel
   "Converts kebab-case to camelCase. Preserves other formats."
   [k]
@@ -166,7 +171,7 @@
   "Converts camelCase to kebab-case keyword."
   [k]
   (let [s (if (keyword? k) (name k) (str k))]
-    (if (re-find #"[A-Z]" s)
+    (if (is-camel-case? s)
       (keyword (str/lower-case (str/replace s #"([a-z])([A-Z])" "$1-$2")))
       (if (keyword? k) k (keyword s)))))
 
@@ -194,6 +199,44 @@
             :else (assoc m k v)))
         {}
         form)
+       form))
+   params))
+
+(defn- add-kebab-for-keyword
+  "If keyword k is camelCase, adds both k and its kebab-case version to map m."
+  [m k v]
+  (let [k-str (name k)]
+    (if (is-camel-case? k-str)
+      (assoc m k v (camel->kebab k) v)
+      (assoc m k v))))
+
+(defn- add-kebab-for-string
+  "If string k is camelCase, adds k, keyword k, and kebab-case versions to map m."
+  [m k v]
+  (if (is-camel-case? k)
+    (assoc m k v (camel->kebab k) v (keyword k) v)
+    (assoc m k v)))
+
+(defn- denormalize-map-keys
+  "Add kebab-case versions of camelCase keys in a single map."
+  [m]
+  (reduce-kv
+   (fn [acc k v]
+     (cond
+       (keyword? k) (add-kebab-for-keyword acc k v)
+       (string? k) (add-kebab-for-string acc k v)
+       :else (assoc acc k v)))
+   {}
+   m))
+
+(defn denormalize-tool-params
+  "Denormalizes parameter keys from LLM response for Clojure compatibility.
+   CamelCase keywords get kebab-case equivalents added."
+  [params]
+  (walk/postwalk
+   (fn [form]
+     (if (map? form)
+       (denormalize-map-keys form)
        form))
    params))
 

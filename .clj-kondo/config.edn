@@ -1,5 +1,16 @@
-{:linters {:unresolved-symbol {:level :warning
-                               :exclude [(langchain4clj.structured/Person)]}
+{;; Hooks for macros that define symbols dynamically
+ :hooks {:analyze-call {langchain4clj.memory/defmemory hooks.langchain4clj.memory/defmemory
+                        langchain4clj.structured/defstructured hooks.langchain4clj.structured/defstructured}}
+
+ ;; Suppress inline-def warnings in test namespaces that use defmemory/defstructured
+ ;; These macros legitimately define vars inside testing blocks
+ :config-in-ns {langchain4clj.memory-test {:linters {:inline-def {:level :off}}}
+                langchain4clj.memory-integration-test {:linters {:inline-def {:level :off}}}
+                langchain4clj.structured-test {:linters {:inline-def {:level :off}}}}
+
+ :linters {:unresolved-symbol {:level :warning
+                               :exclude [;; defstructured macro in src (for examples in comments)
+                                         (langchain4clj.structured/Person)]}
            :unused-binding {:level :warning}
            :unused-import {:level :warning
                           ;; These imports are used in defbuilder macro expansions

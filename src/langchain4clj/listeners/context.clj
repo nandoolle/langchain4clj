@@ -27,8 +27,7 @@
                                :max-output-tokens 4096})
       :provider :anthropic})
    ```"
-  (:require [langchain4clj.listeners.specs :as specs]
-            [langchain4clj.listeners.types :as types]
+  (:require [langchain4clj.listeners.types :as types]
             [clojure.spec.alpha :as s]))
 
 ;; =============================================================================
@@ -167,7 +166,7 @@
      {:model-name :claude-sonnet-4
       :finish-reason :end-turn
       :token-usage (token-usage 150 250)})"
-  [{:keys [model-name finish-reason token-usage response-id] :as opts}]
+  [{:keys [model-name finish-reason token-usage response-id]}]
   (cond-> {:model-name model-name
            :finish-reason finish-reason
            :token-usage token-usage}
@@ -195,7 +194,7 @@
                  (user-message \"Hello\")]
       :parameters (parameters :claude-sonnet-4 {:temperature 0.7})
       :provider :anthropic})"
-  [{:keys [messages parameters provider attributes raw-context] :as ctx}]
+  [{:keys [messages parameters provider attributes raw-context]}]
   (cond-> {:messages messages
            :parameters parameters
            :provider provider}
@@ -223,7 +222,7 @@
                             :finish-reason :end-turn
                             :token-usage (token-usage 10 25)})
       :provider :anthropic})"
-  [{:keys [ai-message response-metadata provider request-context attributes raw-context] :as ctx}]
+  [{:keys [ai-message response-metadata provider request-context attributes raw-context]}]
   (cond-> {:ai-message ai-message
            :response-metadata response-metadata
            :provider provider}
@@ -249,7 +248,7 @@
               :error-cause \"Too many requests\"}
       :provider :openai
       :request-context original-request})"
-  [{:keys [error provider request-context attributes] :as ctx}]
+  [{:keys [error provider request-context attributes]}]
   (cond-> {:error error
            :provider provider}
     request-context (assoc :request-context request-context)
@@ -274,9 +273,9 @@
 
 (defn validate!
   "Validate a context against its spec. Throws ex-info on failure.
-   
+
    Example:
-   (validate! ::specs/request-context my-request)"
+   (validate! :langchain4clj.listeners.specs/request-context my-request)"
   [spec ctx]
   (if (s/valid? spec ctx)
     ctx
@@ -286,9 +285,9 @@
 
 (defn valid?
   "Check if a context is valid against its spec.
-   
+
    Example:
-   (valid? ::specs/request-context my-request)"
+   (valid? :langchain4clj.listeners.specs/request-context my-request)"
   [spec ctx]
   (s/valid? spec ctx))
 
