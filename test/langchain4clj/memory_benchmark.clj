@@ -1,8 +1,7 @@
 (ns langchain4clj.memory-benchmark
   "Performance benchmarks for memory operations."
   (:require [clojure.test :refer [deftest testing]]
-            [langchain4clj.memory :as mem]
-            [langchain4clj.memory.core :as core])
+            [langchain4clj.memory :as mem])
   (:import [dev.langchain4j.data.message UserMessage]
            [dev.langchain4j.model.output TokenUsage]))
 
@@ -34,7 +33,7 @@
 
   (testing "Benchmark: stats performance"
     (let [memory (mem/create-memory {:max-messages 1000})]
-      (dotimes [i 1000]
+      (dotimes [_ 1000]
         (mem/add-message! memory (UserMessage. "Test")))
       (benchmark "Get stats (1000 messages)"
         (fn []
@@ -46,7 +45,7 @@
     (let [memory (mem/create-memory {:max-messages 1000})]
       (benchmark "Add 1000 messages with token tracking"
         (fn []
-          (dotimes [i 1000]
+          (dotimes [_ 1000]
             (mem/add-message! memory
                               (UserMessage. "Test")
                               {:token-usage (mock-token-usage 100)})))))))
@@ -72,7 +71,7 @@
                      (mem/with-auto-reset {:reset-threshold 0.85}))]
       (benchmark "Trigger auto-reset (100 messages, 85% threshold)"
         (fn []
-          (dotimes [i 100]
+          (dotimes [_ 100]
             (mem/add-message! memory (UserMessage. "Test"))))))))
 
 (deftest ^:benchmark benchmark-composition
@@ -81,7 +80,7 @@
                      (mem/with-auto-reset {:reset-threshold 0.9}))]
       (benchmark "Add to composed memory (1000 messages)"
         (fn []
-          (dotimes [i 1000]
+          (dotimes [_ 1000]
             (mem/add-message! memory (UserMessage. "Test"))))))))
 
 (comment

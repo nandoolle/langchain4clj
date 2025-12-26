@@ -110,7 +110,7 @@
                      (mem/with-auto-reset {:max-tokens 1000
                                            :reset-threshold 0.85}))]
       ;; Add messages totaling 900 tokens (90% of 1000)
-      (dotimes [i 9]
+      (dotimes [_ 9]
         (mem/add-message! memory (UserMessage. "Test") {:token-usage (mock-token-usage 100)}))
 
       ;; Should have reset
@@ -250,7 +250,7 @@
                      (mem/with-auto-reset {:max-messages 5
                                            :reset-threshold 0.8
                                            :context []}))]
-      (dotimes [i 5]
+      (dotimes [_ 5]
         (mem/add-message! memory (UserMessage. "Test")))
       (is (>= (:message-count (mem/stats memory)) 0))))
 

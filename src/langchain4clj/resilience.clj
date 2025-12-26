@@ -1,7 +1,6 @@
 (ns langchain4clj.resilience
   "Provider failover and circuit breaker for high availability."
-  (:require [langchain4clj.core :as core]
-            [langchain4clj.constants :as const]
+  (:require [langchain4clj.constants :as const]
             [clojure.string :as str]
             [clojure.tools.logging :as log])
   (:import [dev.langchain4j.model.chat ChatModel]
@@ -463,3 +462,4 @@
         (^ChatResponse chat [_ ^ChatRequest request]
           (try-providers-with-retry-request all-providers request
                                             max-retries retry-delay-ms))))))
+

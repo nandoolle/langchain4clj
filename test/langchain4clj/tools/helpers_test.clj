@@ -7,12 +7,7 @@
   (:import
    [dev.langchain4j.agent.tool ToolSpecification ToolExecutionRequest]
    [dev.langchain4j.service.tool ToolExecutor]
-   [dev.langchain4j.model.chat.request.json
-    JsonObjectSchema
-    JsonStringSchema
-    JsonIntegerSchema
-    JsonArraySchema
-    JsonEnumSchema]))
+   [dev.langchain4j.model.chat.request.json JsonObjectSchema]))
 
 ;; =============================================================================
 ;; Test: create-tool-spec

@@ -25,10 +25,10 @@
         (core/add-message! memory message metadata)
         nil)
 
-      (get-messages [this]
+      (get-messages [_]
         (core/get-messages memory))
 
-      (get-messages [this opts]
+      (get-messages [_ opts]
         (core/get-messages memory opts))
 
       (clear! [_]

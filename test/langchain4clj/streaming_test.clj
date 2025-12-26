@@ -1,6 +1,6 @@
 (ns langchain4clj.streaming-test
   "Tests for streaming API"
-  (:require [clojure.test :refer [deftest testing is use-fixtures]]
+  (:require [clojure.test :refer [deftest testing is]]
             [langchain4clj.streaming :as streaming])
   (:import [dev.langchain4j.model.chat StreamingChatModel]
            [dev.langchain4j.model.chat.response StreamingChatResponseHandler ChatResponse]
@@ -32,7 +32,7 @@
   ([tokens] (create-mock-streaming-model tokens 10))
   ([tokens delay-ms]
    (reify StreamingChatModel
-     (^void chat [this ^String message ^StreamingChatResponseHandler handler]
+     (^void chat [_ ^String _message ^StreamingChatResponseHandler handler]
        (future
          (try
            (doseq [token tokens]
@@ -42,25 +42,25 @@
            (catch Exception e
              (.onError handler e)))))
      (^void chat [this ^java.util.List messages ^StreamingChatResponseHandler handler]
-       (.chat this (str (first messages)) handler)))))
+       (.chat ^StreamingChatModel this (str (first messages)) handler)))))
 
 (defn create-failing-streaming-model
   "Creates a mock model that fails with an exception"
   ([] (create-failing-streaming-model "Mock error"))
   ([error-message]
    (reify StreamingChatModel
-     (^void chat [this ^String message ^StreamingChatResponseHandler handler]
+     (^void chat [_ ^String _message ^StreamingChatResponseHandler handler]
        (future
          (Thread/sleep 10)
          (.onError handler (Exception. error-message))))
      (^void chat [this ^java.util.List messages ^StreamingChatResponseHandler handler]
-       (.chat this (str (first messages)) handler)))))
+       (.chat ^StreamingChatModel this (str (first messages)) handler)))))
 
 (defn create-partial-failure-model
   "Creates a mock model that streams some tokens then fails"
   [tokens-before-error error-message]
   (reify StreamingChatModel
-    (^void chat [this ^String message ^StreamingChatResponseHandler handler]
+    (^void chat [_ ^String _message ^StreamingChatResponseHandler handler]
       (future
         (try
           (doseq [token tokens-before-error]
@@ -71,7 +71,7 @@
           (catch Exception e
             (.onError handler e)))))
     (^void chat [this ^java.util.List messages ^StreamingChatResponseHandler handler]
-      (.chat this (str (first messages)) handler))))
+      (.chat ^StreamingChatModel this (str (first messages)) handler))))
 
 ;; =============================================================================
 ;; Unit Tests

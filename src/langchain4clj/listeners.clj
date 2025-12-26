@@ -24,9 +24,7 @@
    ;; Compose multiple listeners
    (def combined (listeners/compose-listeners logger tracker my-listener))
    ```"
-  (:require [langchain4clj.listeners.context :as ctx]
-            [langchain4clj.listeners.types :as types]
-            [clojure.tools.logging :as log])
+  (:require [clojure.tools.logging :as log])
   (:import [dev.langchain4j.model.chat.listener
             ChatModelListener
             ChatModelRequestContext
@@ -142,8 +140,7 @@
   "Convert ChatResponse to EDN."
   [^ChatResponse response]
   (when response
-    (let [ai-msg (.aiMessage response)
-          metadata (.metadata response)]
+    (let [ai-msg (.aiMessage response)]
       {:ai-message (chat-message->edn ai-msg)
        :response-metadata {:response-id (.id response)
                            :model-name (or (.modelName response) "unknown")

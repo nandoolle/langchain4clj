@@ -2,7 +2,7 @@
   "Tests for thinking/reasoning modes in chat models"
   (:require [clojure.test :refer [deftest is testing]]
             [langchain4clj.core :as core])
-  (:import [dev.langchain4j.model.openai OpenAiChatModel OpenAiChatRequestParameters]
+  (:import [dev.langchain4j.model.openai OpenAiChatModel]
            [dev.langchain4j.model.anthropic AnthropicChatModel]
            [dev.langchain4j.model.googleai GoogleAiGeminiChatModel]))
 

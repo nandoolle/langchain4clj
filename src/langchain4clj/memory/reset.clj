@@ -18,8 +18,7 @@
 (defn with-auto-reset
   "Add automatic reset at capacity threshold with optional context preservation."
   [memory {:keys [max-messages max-tokens reset-threshold context]
-           :or {reset-threshold const/default-reset-threshold}
-           :as opts}]
+           :or {reset-threshold const/default-reset-threshold}}]
   {:pre [(satisfies? core/ChatMemory memory)]}
   (let [limits (atom {:max-messages max-messages
                       :max-tokens max-tokens
@@ -43,10 +42,10 @@
                 (core/add-message! memory context-msg nil)))))
         nil)
 
-      (get-messages [this]
+      (get-messages [_]
         (core/get-messages memory))
 
-      (get-messages [this opts]
+      (get-messages [_ opts]
         (core/get-messages memory opts))
 
       (clear! [_]

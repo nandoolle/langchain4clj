@@ -1,12 +1,10 @@
 (ns langchain4clj.memory-integration-test
   "Integration tests for memory with assistant."
-  (:require [clojure.test :refer [deftest testing is use-fixtures]]
+  (:require [clojure.test :refer [deftest testing is]]
             [langchain4clj.memory :as mem]
-            [langchain4clj.assistant :as asst]
-            [langchain4clj.core :as llm])
+            [langchain4clj.assistant :as asst])
   (:import [dev.langchain4j.data.message UserMessage SystemMessage AiMessage]
            [dev.langchain4j.model.chat ChatModel]
-           [dev.langchain4j.model.chat.response ChatResponse]
            [dev.langchain4j.model.output TokenUsage]))
 
 ;; Mock chat model for testing
@@ -23,15 +21,15 @@
                                 (.tokenUsage token-usage)
                                 (.build))))]
     (reify ChatModel
-      (^String chat [_ ^String message]
+      (^String chat [_ ^String _message]
         (let [response-text (nth responses @call-count "Mock response")]
           (swap! call-count inc)
           response-text))
 
-      (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^java.util.List messages]
+      (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^java.util.List _messages]
         (create-response))
 
-      (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest request]
+      (^dev.langchain4j.model.chat.response.ChatResponse chat [_ ^dev.langchain4j.model.chat.request.ChatRequest _request]
         (create-response)))))
 
 (deftest test-memory-with-assistant-basic

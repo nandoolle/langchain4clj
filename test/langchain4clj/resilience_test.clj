@@ -1,10 +1,10 @@
 (ns langchain4clj.resilience-test
   "Tests for provider failover and resilience system"
-  (:require [clojure.test :refer [deftest testing is use-fixtures]]
+  (:require [clojure.test :refer [deftest testing is]]
             [langchain4clj.resilience :as resilience]
             [langchain4clj.core :as core])
   (:import [dev.langchain4j.model.chat ChatModel]
-           [dev.langchain4j.model.chat.request ChatRequest ChatRequest$Builder]
+           [dev.langchain4j.model.chat.request ChatRequest]
            [dev.langchain4j.model.chat.response ChatResponse]
            [dev.langchain4j.data.message AiMessage UserMessage]))
 
@@ -16,9 +16,9 @@
   "Creates a ChatModel that always succeeds with given response"
   [response]
   (reify ChatModel
-    (^String chat [_ ^String message]
+    (^String chat [_ ^String _message]
       response)
-    (^ChatResponse chat [_ ^ChatRequest request]
+    (^ChatResponse chat [_ ^ChatRequest _request]
       (-> (ChatResponse/builder)
           (.aiMessage (-> (AiMessage/builder)
                           (.text response)
@@ -29,9 +29,9 @@
   "Creates a ChatModel that always fails with given error message"
   [error-message]
   (reify ChatModel
-    (^String chat [_ ^String message]
+    (^String chat [_ ^String _message]
       (throw (Exception. error-message)))
-    (^ChatResponse chat [_ ^ChatRequest request]
+    (^ChatResponse chat [_ ^ChatRequest _request]
       (throw (Exception. error-message)))))
 
 (defn mock-flaky-model
@@ -39,13 +39,13 @@
   [fail-count response]
   (let [attempts (atom 0)]
     (reify ChatModel
-      (^String chat [_ ^String message]
+      (^String chat [_ ^String _message]
         (if (< @attempts fail-count)
           (do
             (swap! attempts inc)
             (throw (Exception. "429 Rate limit exceeded")))
           response))
-      (^ChatResponse chat [_ ^ChatRequest request]
+      (^ChatResponse chat [_ ^ChatRequest _request]
         (if (< @attempts fail-count)
           (do
             (swap! attempts inc)
@@ -60,10 +60,10 @@
   "Creates a ChatModel that delays before responding"
   [delay-ms response]
   (reify ChatModel
-    (^String chat [_ ^String message]
+    (^String chat [_ ^String _message]
       (Thread/sleep delay-ms)
       response)
-    (^ChatResponse chat [_ ^ChatRequest request]
+    (^ChatResponse chat [_ ^ChatRequest _request]
       (Thread/sleep delay-ms)
       (-> (ChatResponse/builder)
           (.aiMessage (-> (AiMessage/builder)
@@ -91,7 +91,7 @@
   (testing "When primary works, fallbacks should not be tried"
     (let [fallback-called (atom false)
           fallback (reify ChatModel
-                     (^String chat [_ ^String message]
+                     (^String chat [_ ^String _message]
                        (reset! fallback-called true)
                        "Fallback"))
           model (resilience/create-resilient-model
@@ -157,7 +157,7 @@
   (testing "Should not retry on authentication errors, go straight to fallback"
     (let [primary-attempts (atom 0)
           primary (reify ChatModel
-                    (^String chat [_ ^String message]
+                    (^String chat [_ ^String _message]
                       (swap! primary-attempts inc)
                       (throw (Exception. "401 Unauthorized"))))
           model (resilience/create-resilient-model
@@ -189,11 +189,11 @@
                   :fallbacks [(mock-working-model "ChatRequest fallback works")]})
           request (-> (ChatRequest/builder)
                       (.messages [(UserMessage. "test")])
-                      (.build))]
+                      (.build))
+          response (.chat ^ChatModel model request)]
 
-      (let [response (.chat ^ChatModel model request)]
-        (is (instance? ChatResponse response))
-        (is (= "ChatRequest fallback works" (-> response .aiMessage .text)))))))
+      (is (instance? ChatResponse response))
+      (is (= "ChatRequest fallback works" (-> response .aiMessage .text))))))
 
 ;; ============================================================================
 ;; Configuration Tests
@@ -252,12 +252,12 @@
                                                  :api-key "invalid-key"})
                     :fallbacks [(core/create-model {:provider :ollama})]
                     :max-retries 1
-                    :retry-delay-ms 100})]
+                    :retry-delay-ms 100})
+            ;; OpenAI should fail (invalid key) → fallback to Ollama succeeds
+            response (core/chat model "Say 'test' only")]
 
-        ;; OpenAI should fail (invalid key) → fallback to Ollama succeeds
-        (let [response (core/chat model "Say 'test' only")]
-          (is (string? response))
-          (is (not-empty response))))
+        (is (string? response))
+        (is (not-empty response)))
 
       (catch Exception e
         ;; If Ollama not available, test is skipped
@@ -289,7 +289,7 @@
   (testing "Circuit breaker state transitions correctly from closed to open"
     (let [failure-count (atom 0)
           failing-primary (reify ChatModel
-                            (^String chat [_ ^String message]
+                            (^String chat [_ ^String _message]
                               (swap! failure-count inc)
                               (throw (Exception. "503 Service Unavailable"))))
           model (resilience/create-resilient-model
@@ -335,7 +335,7 @@
   (testing "Circuit breaker closes after success threshold in half-open"
     (let [call-count (atom 0)
           recovering-model (reify ChatModel
-                             (^String chat [_ ^String message]
+                             (^String chat [_ ^String _message]
                                (let [count (swap! call-count inc)]
                                  (if (<= count 2)
                                    (throw (Exception. "503 Service Unavailable"))
@@ -411,11 +411,11 @@
     (let [primary-calls (atom 0)
           fallback-calls (atom 0)
           primary (reify ChatModel
-                    (^String chat [_ ^String message]
+                    (^String chat [_ ^String _message]
                       (swap! primary-calls inc)
                       (throw (Exception. "503 Service Unavailable"))))
           fallback (reify ChatModel
-                     (^String chat [_ ^String message]
+                     (^String chat [_ ^String _message]
                        (swap! fallback-calls inc)
                        (throw (Exception. "503 Service Unavailable"))))
           model (resilience/create-resilient-model
@@ -443,7 +443,7 @@
     (let [call-count (atom 0)
           model (resilience/create-resilient-model
                  {:primary (reify ChatModel
-                             (^String chat [_ ^String message]
+                             (^String chat [_ ^String _message]
                                (swap! call-count inc)
                                (throw (Exception. "503 Service Unavailable"))))
                   :fallbacks [(mock-working-model "Fallback")]

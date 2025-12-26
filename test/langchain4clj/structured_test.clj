@@ -1,14 +1,10 @@
 (ns langchain4clj.structured-test
   "Comprehensive tests for structured output system"
   (:require [clojure.test :refer [deftest is testing]]
-            [langchain4clj.structured :as structured]
-            [langchain4clj.core :as core]
-            [langchain4clj.tools :as tools]
-            [langchain4clj.test-utils :as test-utils]
-            [clojure.data.json :as json])
+            [langchain4clj.structured :as structured])
   (:import [dev.langchain4j.model.chat ChatModel]
            [dev.langchain4j.model.openai OpenAiChatModel]
-           [dev.langchain4j.data.message AiMessage UserMessage]
+           [dev.langchain4j.data.message AiMessage]
            [dev.langchain4j.model.chat.response ChatResponse]
            [dev.langchain4j.model.chat.request ChatRequest]
            [dev.langchain4j.agent.tool ToolExecutionRequest]
@@ -127,13 +123,13 @@
 
   (testing "Generic model returns false by default"
     (let [model (reify ChatModel
-                  (^String chat [_ ^String msg] "test"))]
+                  (^String chat [_ ^String _] "test"))]
       (is (false? (structured/supports-json-mode? model))))))
 
 (deftest test-supports-tools
   (testing "Most models support tools"
     (let [model (reify ChatModel
-                  (^String chat [_ ^String msg] "test"))]
+                  (^String chat [_ ^String _] "test"))]
       (is (structured/supports-tools? model)))))
 
 (deftest test-schema-to-example
@@ -205,11 +201,11 @@
 
           ;; Mock model that returns the response - implement all methods
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _]
                          "Alice")
-                       (^ChatResponse chat [_ ^List messages]
+                       (^ChatResponse chat [_ ^List _messages]
                          response)
-                       (^ChatResponse chat [_ ^ChatRequest request]
+                       (^ChatResponse chat [_ ^ChatRequest _request]
                          response)
                        (^ChatResponse chat [this ^"[Ldev.langchain4j.data.message.ChatMessage;" messages]
                          (let [msg-list (ArrayList. (seq messages))]
@@ -230,11 +226,11 @@
           ai-message (create-ai-message nil tool-requests)
           response (create-chat-response ai-message)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _]
                          "test")
-                       (^ChatResponse chat [_ ^List messages]
+                       (^ChatResponse chat [_ ^List _messages]
                          response)
-                       (^ChatResponse chat [_ ^ChatRequest request]
+                       (^ChatResponse chat [_ ^ChatRequest _request]
                          response)
                        (^ChatResponse chat [this ^"[Ldev.langchain4j.data.message.ChatMessage;" messages]
                          (let [msg-list (ArrayList. (seq messages))]
@@ -256,11 +252,11 @@
 
           ;; Use a complete mock that implements all ChatModel methods
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _]
                          (.text ai-message))
-                       (^ChatResponse chat [_ ^List messages]
+                       (^ChatResponse chat [_ ^List _messages]
                          response)
-                       (^ChatResponse chat [_ ^ChatRequest request]
+                       (^ChatResponse chat [_ ^ChatRequest _request]
                          response)
                        (^ChatResponse chat [this ^"[Ldev.langchain4j.data.message.ChatMessage;" messages]
                          (let [msg-list (ArrayList. (seq messages))]
@@ -281,7 +277,7 @@
   (testing "Validation succeeds on first attempt"
     (let [call-count (atom 0)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String prompt]
+                       (^String chat [_ ^String _prompt]
                          (swap! call-count inc)
                          "{\"name\":\"Alice\",\"age\":30}"))
 
@@ -299,7 +295,7 @@
   (testing "Validation retries on invalid output"
     (let [attempt-count (atom 0)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String prompt]
+                       (^String chat [_ ^String _prompt]
                          (swap! attempt-count inc)
                          (if (< @attempt-count 3)
                            "invalid json {"
@@ -319,7 +315,7 @@
   (testing "Validation retries for EDN format"
     (let [attempt-count (atom 0)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String prompt]
+                       (^String chat [_ ^String _prompt]
                          (swap! attempt-count inc)
                          (if (< @attempt-count 2)
                            "{invalid edn"
@@ -339,7 +335,7 @@
 (deftest test-chat-with-validation-max-attempts
   (testing "Throws after max attempts"
     (let [mock-model (reify ChatModel
-                       (^String chat [_ ^String prompt]
+                       (^String chat [_ ^String _prompt]
                          "always invalid {"))
 
           schema {:name :string}]
@@ -377,11 +373,11 @@
           ai-message (create-ai-message nil tool-requests)
           response (create-chat-response ai-message)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _]
                          "alice")
-                       (^ChatResponse chat [_ ^List messages]
+                       (^ChatResponse chat [_ ^List _messages]
                          response)
-                       (^ChatResponse chat [_ ^ChatRequest request]
+                       (^ChatResponse chat [_ ^ChatRequest _request]
                          response)
                        (^ChatResponse chat [this ^"[Ldev.langchain4j.data.message.ChatMessage;" messages]
                          (let [msg-list (ArrayList. (seq messages))]
@@ -402,11 +398,11 @@
           ai-message (create-ai-message nil tool-requests)
           response (create-chat-response ai-message)
           mock-model (reify ChatModel
-                       (^String chat [_ ^String message]
+                       (^String chat [_ ^String _]
                          "Widget")
-                       (^ChatResponse chat [_ ^List messages]
+                       (^ChatResponse chat [_ ^List _messages]
                          response)
-                       (^ChatResponse chat [_ ^ChatRequest request]
+                       (^ChatResponse chat [_ ^ChatRequest _request]
                          response)
                        (^ChatResponse chat [this ^"[Ldev.langchain4j.data.message.ChatMessage;" messages]
                          (let [msg-list (ArrayList. (seq messages))]
@@ -415,6 +411,9 @@
           result (get-testproduct-json mock-model "Get product")]
 
       (is (string? result))
+      ;; NOTE: clj-kondo warning "Expected: string, received: nil" - false positive
+      ;; The clj-kondo hook for defstructured returns nil as placeholder,
+      ;; causing incorrect type inference. Safe to ignore - validated above.
       (is (re-find #"Widget" result)))))
 
 ;; ============================================================================
@@ -467,7 +466,7 @@
 (deftest test-error-handling
   (testing "Proper error messages on failures"
     (let [mock-model (reify ChatModel
-                       (^String chat [_ ^String prompt]
+                       (^String chat [_ ^String _prompt]
                          "not json at all"))
           schema {:name :string}]
 

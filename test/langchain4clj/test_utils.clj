@@ -1,12 +1,10 @@
 (ns langchain4clj.test-utils
   "Test utilities and mocks for langchain4clj"
-  (:require [langchain4clj :as llm]
-            [langchain4clj.agents :as agents])
+  (:require [langchain4clj :as llm])
   (:import [dev.langchain4j.model.chat ChatModel]
-           [dev.langchain4j.data.message UserMessage SystemMessage AiMessage ChatMessage]
+           [dev.langchain4j.data.message UserMessage SystemMessage AiMessage]
            [dev.langchain4j.model.chat.response ChatResponse]
-           [dev.langchain4j.model.chat.request ChatRequest]
-           [java.util List ArrayList]))
+           [java.util ArrayList]))
 
 ;; ============================================================================
 ;; Mock Models
@@ -185,7 +183,7 @@
 
 (defn with-mock-llm
   "Macro to run tests with mocked LLM"
-  [responses & body]
+  [_responses & body]
   `(with-redefs [llm/chat (fn [model# message#]
                             (if (map? model#)
                               ((:chat model#) message#)
@@ -199,11 +197,11 @@
 
 (defn create-test-agent
   "Creates a test agent with mock model"
-  [{:keys [name responses] :as config}]
+  [{:keys [name responses]}]
   (let [mock-model (create-mock-chat-model responses)]
     {:name (or name "TestAgent")
      :model mock-model
-     :process (fn [input context]
+     :process (fn [input _context]
                 ((:chat mock-model) input))}))
 
 ;; ============================================================================

@@ -1,6 +1,5 @@
 (ns langchain4clj.listeners.context-test
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.spec.alpha :as s]
             [langchain4clj.listeners.context :as ctx]
             [langchain4clj.listeners.specs :as specs]))
 
@@ -314,10 +313,10 @@
 
 (deftest tool-calling-workflow-test
   (testing "request with tool call response"
-    (let [request (ctx/request-context
-                   {:messages [(ctx/user-message "What's the weather in London?")]
-                    :parameters (ctx/parameters :gpt-4o {:temperature 0.0})
-                    :provider :openai})
+    (let [_request (ctx/request-context
+                    {:messages [(ctx/user-message "What's the weather in London?")]
+                     :parameters (ctx/parameters :gpt-4o {:temperature 0.0})
+                     :provider :openai})
 
           ;; AI responds with tool call
           ai-response (ctx/ai-message-with-tool-calls

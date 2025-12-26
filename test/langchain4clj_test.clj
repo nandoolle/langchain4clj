@@ -1,13 +1,11 @@
 (ns langchain4clj-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [langchain4clj :as lc4j])
-  (:import [dev.langchain4j.model.chat ChatModel]
-           [dev.langchain4j.model.openai OpenAiChatModel]
-           [dev.langchain4j.model.anthropic AnthropicChatModel]))
+  (:import [dev.langchain4j.model.chat ChatModel]))
 
 (deftest test-create-model-openai
   (testing "Criação de modelo OpenAI com configuração mínima"
-    (with-redefs [lc4j/build-openai-model (fn [config]
+    (with-redefs [lc4j/build-openai-model (fn [_config]
                                             (reify ChatModel
                                               (^String chat [_ ^String msg]
                                                 (str "Mock OpenAI response: " msg))))]
@@ -19,7 +17,7 @@
 
 (deftest test-create-model-anthropic
   (testing "Criação de modelo Anthropic com configuração mínima"
-    (with-redefs [lc4j/build-anthropic-model (fn [config]
+    (with-redefs [lc4j/build-anthropic-model (fn [_config]
                                                (reify ChatModel
                                                  (^String chat [_ ^String msg]
                                                    (str "Mock Anthropic response: " msg))))]

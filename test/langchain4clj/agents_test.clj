@@ -1,11 +1,9 @@
 (ns langchain4clj.agents-test
   "Tests for the multi-agent system with mocked LLM calls"
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is run-tests testing]]
             [langchain4clj.agents :as agents]
             [langchain4clj :as llm]
-            [langchain4clj.test-utils :as test-utils])
-  (:import [dev.langchain4j.data.message AiMessage]
-           [dev.langchain4j.model.chat.response ChatResponse]))
+            [langchain4clj.test-utils :as test-utils]))
 
 ;; ============================================================================
 ;; Mock Helpers
@@ -26,7 +24,7 @@
 
 (defn mock-llm-create-model
   "Mock function for llm/create-model"
-  [config]
+  [_config]
   (create-mock-model ["Mocked response"]))
 
 ;; ============================================================================
@@ -208,12 +206,12 @@
                                          :api-key "mock"
                                          :model "a2"})
             system (agents/create-collaborative-system
-                    {:agents [agent1 agent2]})]
+                    {:agents [agent1 agent2]})
+            results (agents/execute system "Task")]
 
-        (let [results (agents/execute system "Task")]
-          (is (map? results))
-          (is (= "Result A" (get results "Agent1")))
-          (is (= "Result B" (get results "Agent2"))))))))
+        (is (map? results))
+        (is (= "Result A" (get results "Agent1")))
+        (is (= "Result B" (get results "Agent2")))))))
 
 ;; ============================================================================
 ;; Tool Agent Tests

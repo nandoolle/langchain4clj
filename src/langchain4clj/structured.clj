@@ -11,7 +11,7 @@
   (:import [dev.langchain4j.model.chat.request ChatRequest ResponseFormat]
            [dev.langchain4j.model.openai OpenAiChatModel]
            [dev.langchain4j.agent.tool ToolSpecification]
-           [dev.langchain4j.data.message UserMessage SystemMessage]))
+           [dev.langchain4j.data.message UserMessage]))
 
 (def ^:private json-mapper
   (j/object-mapper {:decode-key-fn keyword :encode-key-fn name :pretty true}))

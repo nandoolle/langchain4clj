@@ -2,15 +2,12 @@
   "Comprehensive tests for the assistant system"
   (:require [clojure.test :refer [deftest is testing]]
             [langchain4clj.assistant :as assistant]
-            [langchain4clj.core :as core]
             [langchain4clj.tools :as tools]
             [langchain4clj.test-utils :as test-utils]
             [clojure.data.json :as json]
             [clojure.spec.alpha :as s])
-  (:import [dev.langchain4j.model.chat ChatModel]
-           [dev.langchain4j.data.message UserMessage SystemMessage AiMessage]
+  (:import [dev.langchain4j.data.message UserMessage SystemMessage AiMessage]
            [dev.langchain4j.model.chat.response ChatResponse]
-           [dev.langchain4j.model.chat.request ChatRequest]
            [dev.langchain4j.agent.tool ToolExecutionRequest]
            [java.util ArrayList]))
 
@@ -232,7 +229,7 @@
   (testing "Chat reaches max iterations"
     (let [iteration-count (atom 0)
           mock-model (test-utils/create-java-mock-chat-model-with-response
-                      (fn [messages]
+                      (fn [_messages]
                         (swap! iteration-count inc)
                         (let [;; Always request a tool to trigger loop
                               tool-req (create-tool-request "test" "{}")
@@ -271,7 +268,7 @@
 (deftest test-create-assistant-with-memory
   (testing "Assistant retains conversation in memory"
     (let [mock-model (test-utils/create-java-mock-chat-model
-                      (fn [_] (str "Received message")))
+                      (fn [_] "Received message"))
 
           memory (assistant/create-memory {:max-messages 10})
           assistant-fn (assistant/create-assistant {:model mock-model
@@ -373,7 +370,7 @@
     (let [call-count (atom 0)
           mock-model (test-utils/create-java-mock-chat-model "Response")
           memory (assistant/create-memory {:max-messages 20})
-          system-fn (fn [ctx]
+          system-fn (fn [_ctx]
                       (swap! call-count inc)
                       (str "Call " @call-count))
           assistant-fn (assistant/create-assistant
@@ -415,9 +412,7 @@
 
 (deftest test-create-assistant-template-vars
   (testing "Assistant with template variables"
-    (let [processed-input (atom nil)
-          mock-model (test-utils/create-java-mock-chat-model "Response")
-
+    (let [mock-model (test-utils/create-java-mock-chat-model "Response")
           assistant-fn (assistant/create-assistant {:model mock-model})]
 
       (assistant-fn "Hello {{name}}" {:template-vars {:name "World"}})
@@ -460,7 +455,7 @@
 
 (deftest test-with-structured-output
   (testing "Wrapping assistant with parser"
-    (let [base-assistant (fn [input] "name: Alice, age: 30")
+    (let [base-assistant (fn [_input] "name: Alice, age: 30")
           parser (fn [response]
                    {:name (re-find #"name: (\w+)" response)
                     :age (Integer/parseInt
@@ -476,15 +471,15 @@
 
 (deftest test-with-structured-output-json-parser
   (testing "Structured output with JSON parser"
-    (let [base-assistant (fn [input] "{\"result\": 42}")
+    (let [base-assistant (fn [_input] "{\"result\": 42}")
           parser (fn [response] (json/read-str response :key-fn keyword))
 
           structured-assistant (assistant/with-structured-output
                                  base-assistant
-                                 parser)]
+                                 parser)
+          result (structured-assistant "Get data")]
 
-      (let [result (structured-assistant "Get data")]
-        (is (= 42 (:result result)))))))
+      (is (= 42 (:result result))))))
 
 ;; ============================================================================
 ;; Integration Tests
@@ -529,7 +524,7 @@
         (is (string? r3)))
 
       ;; Clear and start fresh - system message will be re-added on next call
-      (let [r4 (assistant-fn "New conversation" {:clear-memory? true})]
+      (let [_r4 (assistant-fn "New conversation" {:clear-memory? true})]
         ;; After clear: system message + 1 user + 1 AI = 3
         (is (= 3 (count (assistant/get-messages memory))))))))
 
