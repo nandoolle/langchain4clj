@@ -12,13 +12,13 @@ A Clojure wrapper for [LangChain4j](https://github.com/langchain4j/langchain4j) 
 Add to your `deps.edn`:
 
 ```clojure
-{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.3.0"}}}
+{:deps {io.github.nandoolle/langchain4clj {:mvn/version "1.6.1"}}}
 ```
 
 Or to your Leiningen `project.clj`:
 
 ```clojure
-[io.github.nandoolle/langchain4clj "1.3.0"]
+[io.github.nandoolle/langchain4clj "1.6.1"]
 ```
 
 ## Simple Example
