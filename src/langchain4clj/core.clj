@@ -113,8 +113,8 @@
    :timeout [:timeout duration-from-millis]
    :log-requests? :logRequests
    :log-responses? :logResponses
-   :max-retries :maxRetries
-   :max-tokens :maxTokens
+   :max-retries [:maxRetries int-from-long]
+   :max-tokens [:maxTokens int-from-long]
    :listeners :listeners
    :top-p :topP
    :seed [:seed int-from-long]
@@ -146,8 +146,8 @@
    :timeout [:timeout duration-from-millis]
    :log-requests? :logRequests
    :log-responses? :logResponses
-   :max-retries :maxRetries
-   :max-tokens :maxTokens
+   :max-retries [:maxRetries int-from-long]
+   :max-tokens [:maxTokens int-from-long]
    :listeners :listeners
    :top-p :topP
    :top-k [:topK int-from-long]
@@ -171,8 +171,8 @@
    :timeout [:timeout duration-from-millis]
    :log-requests? :logRequestsAndResponses
    :log-responses? :logRequestsAndResponses
-   :max-retries :maxRetries
-   :max-tokens :maxOutputTokens
+   :max-retries [:maxRetries int-from-long]
+   :max-tokens [:maxOutputTokens int-from-long]
    :listeners :listeners
    :top-p :topP
    :top-k [:topK int-from-long]
@@ -199,8 +199,8 @@
    :model :modelName
    :temperature :temperature
    :timeout [:timeout duration-from-millis]
-   :max-retries :maxRetries
-   :max-tokens :maxOutputTokens
+   :max-retries [:maxRetries int-from-long]
+   :max-tokens [:maxOutputTokens int-from-long]
    :listeners :listeners})
 
 (macros/defbuilder build-ollama-model
@@ -228,8 +228,8 @@
    :timeout [:timeout duration-from-millis]
    :log-requests? :logRequests
    :log-responses? :logResponses
-   :max-retries :maxRetries
-   :max-tokens :maxTokens
+   :max-retries [:maxRetries int-from-long]
+   :max-tokens [:maxTokens int-from-long]
    :listeners :listeners})
 
 (macros/defbuilder build-chat-request-idiomatic
@@ -237,9 +237,9 @@
   {:messages :messages
    :model-name :modelName
    :temperature :temperature
-   :max-tokens :maxOutputTokens
+   :max-tokens [:maxOutputTokens int-from-long]
    :top-p :topP
-   :top-k :topK
+   :top-k [:topK int-from-long]
    :frequency-penalty :frequencyPenalty
    :presence-penalty :presencePenalty
    :stop-sequences :stopSequences
@@ -561,9 +561,9 @@
       (seq messages) (.messages messages)
       model-name (.modelName model-name)
       temperature (.temperature temperature)
-      max-tokens (.maxOutputTokens (int max-tokens))
+      max-tokens (.maxOutputTokens (int-from-long max-tokens))
       top-p (.topP top-p)
-      top-k (.topK (int top-k))
+      top-k (.topK (int-from-long top-k))
       frequency-penalty (.frequencyPenalty frequency-penalty)
       presence-penalty (.presencePenalty presence-penalty)
       (seq stop-sequences) (.stopSequences stop-sequences)

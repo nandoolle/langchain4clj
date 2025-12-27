@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [1.6.1] - 2025-12-27
+
+### Fixed
+
+- **Long → Integer Cast Error** - Fixed ClassCastException when passing Clojure Long literals to Java methods expecting Integer
+  - Added `int-from-long` transformer to all builder fields that expect Integer values
+  - Affected fields: `:max-retries`, `:max-tokens` across all providers (OpenAI, Anthropic, Google AI Gemini, Vertex AI, Mistral)
+  - Fixed `build-chat-request` to use `int-from-long` instead of raw `(int ...)` which caused NPE on nil values
+  - Fixed `build-chat-request-idiomatic` builder for `:max-tokens` and `:top-k` fields
+  - This enables clojure-mcp and other clients to use `{:max-iterations 10}` without cast errors
+
 ## [1.6.0] - 2025-12-24
 
 ### Added
