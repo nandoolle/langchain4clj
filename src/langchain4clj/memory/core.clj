@@ -2,7 +2,9 @@
   "Core memory protocol and basic implementation."
   (:require [langchain4clj.constants :as const]
             [clojure.spec.alpha :as s])
-  (:import [dev.langchain4j.model.output TokenUsage]))
+  (:import [dev.langchain4j.agent.tool ToolExecutionRequest]
+           [dev.langchain4j.data.message AiMessage SystemMessage ToolExecutionResultMessage]
+           [dev.langchain4j.model.output TokenUsage]))
 
 ;; Protocol definition
 (defprotocol ChatMemory
@@ -75,6 +77,29 @@
   (when-let [^TokenUsage token-usage (:token-usage metadata)]
     (.totalTokenCount token-usage)))
 
+(defn- tool-call-ids [^AiMessage msg]
+  (when-let [calls (seq (.toolExecutionRequests msg))]
+    (into #{} (map #(.id ^ToolExecutionRequest %)) calls)))
+
+(defn- drop-oldest
+  "Drop the oldest unit from messages. An AiMessage with tool calls is
+  dropped together with all its ToolExecutionResultMessages atomically,
+  to avoid leaving orphaned tool results."
+  [messages]
+  (let [oldest (first messages)
+        tail   (vec (rest messages))]
+    (if-let [ids (and (instance? AiMessage oldest) (tool-call-ids oldest))]
+      (into [] (drop-while #(and (instance? ToolExecutionResultMessage %)
+                                 (contains? ids (.id ^ToolExecutionResultMessage %)))
+                           tail))
+      tail)))
+
+(defn- trim-messages [messages max-messages]
+  (loop [msgs messages]
+    (if (<= (count msgs) max-messages)
+      msgs
+      (recur (drop-oldest msgs)))))
+
 ;; Basic memory implementation
 (defn create-basic-memory
   "Create a basic message window memory with sliding window behavior.
@@ -104,27 +129,31 @@
         (when-let [tokens (extract-token-count metadata)]
           (swap! store update :token-count + tokens))
 
-        ;; Add message with sliding window
-        (swap! store update :messages
-               (fn [msgs]
-                 (let [updated (conj msgs message)]
-                   (if (> (count updated) max-messages)
-                     (vec (take-last max-messages updated))
-                     updated))))
+        (if (instance? SystemMessage message)
+          (swap! store assoc :system-message message)
+          (swap! store update :messages
+                 #(trim-messages (conj % message) max-messages)))
         nil)
 
       (get-messages [this]
         (get-messages this {}))
 
       (get-messages [_ opts]
-        (apply-filters (:messages @store) opts))
+        (apply-filters
+          (let [{:keys [system-message messages]} @store]
+            (if system-message
+              (into [system-message] messages)
+              (vec messages)))
+          opts))
 
       (clear! [_]
-        (reset! store {:messages [] :token-count 0})
+        (reset! store {:system-message nil :messages [] :token-count 0})
         nil)
 
       (stats [_]
-        {:message-count (count (:messages @store))
+        {:message-count (let [store @store]
+                          (cond-> (count (:messages store))
+                            (:system-message store) inc))
          :token-count (:token-count @store)}))))
 
 ;; Spec definitions
