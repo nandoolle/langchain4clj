@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [1.6.2] - 2026-04-07
+
+### Fixed
+
+- **Orphaned Tool Call Messages in Memory** - Sliding window now drops AiMessage with tool calls together with its ToolExecutionResultMessages atomically, preventing API errors when tool results are left without their corresponding tool call ([#17](https://github.com/nandoolle/langchain4clj/issues/17))
+- **SystemMessage Eviction** - SystemMessage is now stored separately and never pushed out by the sliding window
+
 ## [1.6.1] - 2025-12-27
 
 ### Fixed
