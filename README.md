@@ -12,7 +12,7 @@ LangChain4Clj is a **pure translation layer** - we wrap LangChain4j's functional
 
 ## Features
 
-- **Multiple LLM Providers** - OpenAI, Anthropic, Google AI Gemini, Vertex AI Gemini, Mistral, Ollama
+- **Multiple LLM Providers** - OpenAI, Azure, Anthropic, Google AI Gemini, Vertex AI Gemini, Mistral, Ollama
 - **Model Presets** - Pre-configured models with sensible defaults for quick setup
 - **Environment Variable Resolution** - Secure API key management with `[:env "VAR"]` pattern
 - **JSON Schema Converter** - Define tool parameters with standard JSON Schema syntax
