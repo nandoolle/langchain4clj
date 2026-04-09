@@ -6,6 +6,7 @@
             [clojure.spec.alpha :as s]
             [clojure.tools.logging :as log])
   (:import [dev.langchain4j.model.openai OpenAiChatModel OpenAiChatRequestParameters]
+           [dev.langchain4j.model.azure AzureOpenAiChatModel]
            [dev.langchain4j.model.chat ChatModel]
            [dev.langchain4j.model.anthropic AnthropicChatModel]
            [dev.langchain4j.model.googleai GoogleAiGeminiChatModel GeminiThinkingConfig]
@@ -136,6 +137,19 @@
    :store :store
    :metadata :metadata
    :service-tier :serviceTier})
+
+(macros/defbuilder build-azure-model
+  (AzureOpenAiChatModel/builder)
+  {:api-key :apiKey
+   :model :deploymentName
+   :endpoint :endpoint
+   :temperature :temperature
+   :timeout [:timeout duration-from-millis]
+   :tools :defaultRequestParameters
+   :log-requests? :logRequests
+   :log-responses? :logResponses
+   :max-retries :maxRetries
+   :max-tokens :maxTokens})
 
 (macros/defbuilder build-anthropic-model
   (AnthropicChatModel/builder)
@@ -270,6 +284,22 @@
                            (when (:return thinking)
                              {:return-thinking true}))]
     (build-openai-model base-config)))
+
+(defmethod build-model :azure
+  [{:keys [model _temperature timeout log-requests? log-responses?]
+    :or {model "gpt-4o-mini"
+         ;; TODO: get this param into the built model
+         ; _temperature const/default-temperature
+         timeout const/default-timeout-ms
+         log-requests? false
+         log-responses? false}
+    :as config}]
+  (build-azure-model
+    (merge {:model model
+            :log-requests? log-requests?
+            :timeout timeout
+            :log-responses? log-responses?}
+           (select-keys config [:api-key :endpoint :max-retries :max-tokens]))))
 
 (defmethod build-model :anthropic
   [{:keys [model temperature timeout log-requests? log-responses? thinking]

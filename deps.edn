@@ -5,6 +5,7 @@
         dev.langchain4j/langchain4j-core {:mvn/version "1.9.1"}
         dev.langchain4j/langchain4j {:mvn/version "1.9.1"}
         dev.langchain4j/langchain4j-open-ai {:mvn/version "1.9.1"}
+        dev.langchain4j/langchain4j-azure-open-ai {:mvn/version "1.9.1"}
         dev.langchain4j/langchain4j-anthropic {:mvn/version "1.9.1"}
         dev.langchain4j/langchain4j-mistral-ai {:mvn/version "1.9.1"}
         dev.langchain4j/langchain4j-google-ai-gemini {:mvn/version "1.9.1"}
